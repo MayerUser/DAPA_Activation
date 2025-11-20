@@ -1,0 +1,82 @@
+/home/maoyang/.conda/envs/NLP_BASE/lib/python3.9/site-packages/requests/__init__.py:109: RequestsDependencyWarning: urllib3 (2.1.0) or chardet (None)/charset_normalizer (3.3.2) doesn't match a supported version!
+  warnings.warn(
+Fast image processor class <class 'transformers.models.vit.image_processing_vit_fast.ViTImageProcessorFast'> is available for this model. Using slow image processor class. To use the fast image processor class set `use_fast=True`.
+ - Note: Found 'ViTSdpaSelfAttention', supporting modern ViT/DeiT architectures.
+--- Test Configuration ---
+Model: vit-base
+Precision: FP32
+SQRT: torch, Softmax: pwl-16, Activation: pwl-16
+Loss (PWL source): dwmse  (dst_pwl if dwmse, dst_pwl_mse if mse)
+Test samples: 512, Batch size: 256
+
+ - Using AutoModelForImageClassification (standard head) for vit-base
+--- Modifying model ---
+  - Using PWL json base dir: dst_pwl
+  - Creating polynomial approximation module from pwl_gelu_act_vit-base_16seg.json
+  - Queuing PWL GELU/Activation replacement for 'vit.encoder.layer.0.intermediate.intermediate_act_fn' with pwl_gelu_act_vit-base_16seg.json
+  - Creating polynomial approximation module from pwl_gelu_act_vit-base_16seg.json
+  - Queuing PWL GELU/Activation replacement for 'vit.encoder.layer.1.intermediate.intermediate_act_fn' with pwl_gelu_act_vit-base_16seg.json
+  - Creating polynomial approximation module from pwl_gelu_act_vit-base_16seg.json
+  - Queuing PWL GELU/Activation replacement for 'vit.encoder.layer.2.intermediate.intermediate_act_fn' with pwl_gelu_act_vit-base_16seg.json
+  - Creating polynomial approximation module from pwl_gelu_act_vit-base_16seg.json
+  - Queuing PWL GELU/Activation replacement for 'vit.encoder.layer.3.intermediate.intermediate_act_fn' with pwl_gelu_act_vit-base_16seg.json
+  - Creating polynomial approximation module from pwl_gelu_act_vit-base_16seg.json
+  - Queuing PWL GELU/Activation replacement for 'vit.encoder.layer.4.intermediate.intermediate_act_fn' with pwl_gelu_act_vit-base_16seg.json
+  - Creating polynomial approximation module from pwl_gelu_act_vit-base_16seg.json
+  - Queuing PWL GELU/Activation replacement for 'vit.encoder.layer.5.intermediate.intermediate_act_fn' with pwl_gelu_act_vit-base_16seg.json
+  - Creating polynomial approximation module from pwl_gelu_act_vit-base_16seg.json
+  - Queuing PWL GELU/Activation replacement for 'vit.encoder.layer.6.intermediate.intermediate_act_fn' with pwl_gelu_act_vit-base_16seg.json
+  - Creating polynomial approximation module from pwl_gelu_act_vit-base_16seg.json
+  - Queuing PWL GELU/Activation replacement for 'vit.encoder.layer.7.intermediate.intermediate_act_fn' with pwl_gelu_act_vit-base_16seg.json
+  - Creating polynomial approximation module from pwl_gelu_act_vit-base_16seg.json
+  - Queuing PWL GELU/Activation replacement for 'vit.encoder.layer.8.intermediate.intermediate_act_fn' with pwl_gelu_act_vit-base_16seg.json
+  - Creating polynomial approximation module from pwl_gelu_act_vit-base_16seg.json
+  - Queuing PWL GELU/Activation replacement for 'vit.encoder.layer.9.intermediate.intermediate_act_fn' with pwl_gelu_act_vit-base_16seg.json
+  - Creating polynomial approximation module from pwl_gelu_act_vit-base_16seg.json
+  - Queuing PWL GELU/Activation replacement for 'vit.encoder.layer.10.intermediate.intermediate_act_fn' with pwl_gelu_act_vit-base_16seg.json
+  - Creating polynomial approximation module from pwl_gelu_act_vit-base_16seg.json
+  - Queuing PWL GELU/Activation replacement for 'vit.encoder.layer.11.intermediate.intermediate_act_fn' with pwl_gelu_act_vit-base_16seg.json
+  - [DEBUG] Replaced 'vit.encoder.layer.0.intermediate.intermediate_act_fn' successfully.
+  - [DEBUG] Replaced 'vit.encoder.layer.1.intermediate.intermediate_act_fn' successfully.
+  - [DEBUG] Replaced 'vit.encoder.layer.2.intermediate.intermediate_act_fn' successfully.
+  - [DEBUG] Replaced 'vit.encoder.layer.3.intermediate.intermediate_act_fn' successfully.
+  - [DEBUG] Replaced 'vit.encoder.layer.4.intermediate.intermediate_act_fn' successfully.
+  - [DEBUG] Replaced 'vit.encoder.layer.5.intermediate.intermediate_act_fn' successfully.
+  - [DEBUG] Replaced 'vit.encoder.layer.6.intermediate.intermediate_act_fn' successfully.
+  - [DEBUG] Replaced 'vit.encoder.layer.7.intermediate.intermediate_act_fn' successfully.
+  - [DEBUG] Replaced 'vit.encoder.layer.8.intermediate.intermediate_act_fn' successfully.
+  - [DEBUG] Replaced 'vit.encoder.layer.9.intermediate.intermediate_act_fn' successfully.
+  - [DEBUG] Replaced 'vit.encoder.layer.10.intermediate.intermediate_act_fn' successfully.
+  - [DEBUG] Replaced 'vit.encoder.layer.11.intermediate.intermediate_act_fn' successfully.
+  - Creating polynomial approximation module from pwl_exp_sm_vit-base_16seg.json
+  - [DEBUG] Patched forward method of 'vit.encoder.layer.0.attention.attention' (ViTSdpaSelfAttention)
+  - Creating polynomial approximation module from pwl_exp_sm_vit-base_16seg.json
+  - [DEBUG] Patched forward method of 'vit.encoder.layer.1.attention.attention' (ViTSdpaSelfAttention)
+  - Creating polynomial approximation module from pwl_exp_sm_vit-base_16seg.json
+  - [DEBUG] Patched forward method of 'vit.encoder.layer.2.attention.attention' (ViTSdpaSelfAttention)
+  - Creating polynomial approximation module from pwl_exp_sm_vit-base_16seg.json
+  - [DEBUG] Patched forward method of 'vit.encoder.layer.3.attention.attention' (ViTSdpaSelfAttention)
+  - Creating polynomial approximation module from pwl_exp_sm_vit-base_16seg.json
+  - [DEBUG] Patched forward method of 'vit.encoder.layer.4.attention.attention' (ViTSdpaSelfAttention)
+  - Creating polynomial approximation module from pwl_exp_sm_vit-base_16seg.json
+  - [DEBUG] Patched forward method of 'vit.encoder.layer.5.attention.attention' (ViTSdpaSelfAttention)
+  - Creating polynomial approximation module from pwl_exp_sm_vit-base_16seg.json
+  - [DEBUG] Patched forward method of 'vit.encoder.layer.6.attention.attention' (ViTSdpaSelfAttention)
+  - Creating polynomial approximation module from pwl_exp_sm_vit-base_16seg.json
+  - [DEBUG] Patched forward method of 'vit.encoder.layer.7.attention.attention' (ViTSdpaSelfAttention)
+  - Creating polynomial approximation module from pwl_exp_sm_vit-base_16seg.json
+  - [DEBUG] Patched forward method of 'vit.encoder.layer.8.attention.attention' (ViTSdpaSelfAttention)
+  - Creating polynomial approximation module from pwl_exp_sm_vit-base_16seg.json
+  - [DEBUG] Patched forward method of 'vit.encoder.layer.9.attention.attention' (ViTSdpaSelfAttention)
+  - Creating polynomial approximation module from pwl_exp_sm_vit-base_16seg.json
+  - [DEBUG] Patched forward method of 'vit.encoder.layer.10.attention.attention' (ViTSdpaSelfAttention)
+  - Creating polynomial approximation module from pwl_exp_sm_vit-base_16seg.json
+  - [DEBUG] Patched forward method of 'vit.encoder.layer.11.attention.attention' (ViTSdpaSelfAttention)
+--- Model modification complete ---
+
+ - Applying transforms: Resize(256) -> CenterCrop(224)
+Loading 512 samples from 'ILSVRC/imagenet-1k' (streaming)...
+Evaluating (FP32): 0it [00:00, ?it/s]Evaluating (FP32): 1it [00:09,  9.30s/it]Evaluating (FP32): 2it [00:12,  5.47s/it]Evaluating (FP32): 3it [00:12,  3.34s/it]Evaluating (FP32): 4it [00:13,  2.34s/it]Evaluating (FP32): 4it [00:13,  3.43s/it]
+
+--- Results ---
+Top-1 Accuracy on 512 samples (FP32): 83.98%

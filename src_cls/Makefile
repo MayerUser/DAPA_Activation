@@ -20,6 +20,11 @@ endif
 
 # --- Experiment Pipeline Configuration (EXP1, EXP3, EXP5) ---
 
+# DEMO : MSE vs Performance and DWMSE vs Performance
+DEMO_MODELS = vit-tiny vit-small vit-base
+DEMO_SEGMENTS = 16
+DEMO_SAMPLES = 256
+
 # EXP1 : MSE vs Performance and DWMSE vs Performance
 EXP1_MODELS = vit-tiny vit-small vit-base
 EXP1_SEGMENTS = 4 6 8 10 12 14 16
@@ -74,11 +79,11 @@ ANALYSIS_MODEL_DEFAULT = vit-tiny
 .PHONY: all pwl_img pwl_nlp poly test_exp1 test_exp3 finetune_exp4 test_exp4 test_exp5 clean demo ref
 .PHONY: all-bits find-bits bits-%
 
-
 # --- Main Experiment Targets ---
 
 # Default target: Run the entire pipeline from generation to testing.
-all: clean pwl_img poly test_exp1 test_exp3 test_exp5
+# all: clean pwl_img poly test_exp1 test_exp3 test_exp5
+all: clean pwl_img_demo test_demo
 
 define run_pwl_generation
 	@mkdir -p dst_log
@@ -112,18 +117,39 @@ define run_pwl_generation_mse
 	)
 endef
 
+pwl_img_demo:
+	@echo "--- Generating Piecewise (PWL) approximation files for Image Models... ---"
+	@mkdir -p dst_log dst_pdf dst_plot dst_pwl
+	$(call run_pwl_generation,$(DEMO_SAMPLES),$(DEMO_MODELS),$(DEMO_SEGMENTS))
+	@echo "--- Image PWL file generation complete. ---"
+
+test_demo:
+	@echo ""
+	@echo ">> Quick Demo Test for "
+	@$(foreach model,$(DEMO_MODELS), \
+		$(foreach seg,$(DEMO_SEGMENTS), \
+			echo ""; \
+			if [ ! -f dst_log/test_exp1_pwl_$(model)_$(seg)_$(DEMO_SAMPLES).log ]; then \
+				echo ">> Testing $(model) with PWL-$(seg)..."; \
+				$(PYTHON) t1_vit_run.py --model_name $(model) --softmax pwl-$(seg) --act pwl-$(seg) --num_samples $(DEMO_SAMPLES) $(CACHE_DIR_ARG) 2>&1 | tee dst_log/test_exp1_pwl_$(model)_$(seg)_$(DEMO_SAMPLES).log; \
+			else \
+				echo ">> Skipping EXP1 PWL test for $(model)-$(seg)seg (log exists)."; \
+			fi; \
+		) \
+	)
+
+
 # Generate all necessary PWL approximation files for Image models.
 pwl_img:
 	@echo "--- Generating Piecewise (PWL) approximation files for Image Models... ---"
 	@mkdir -p dst_log dst_pdf dst_plot dst_pwl
 	$(call run_pwl_generation,$(EXP1_SAMPLES),$(EXP1_MODELS),$(EXP1_SEGMENTS))
+	$(call run_pwl_generation,$(EXP2_SAMPLES),$(EXP2_MODELS),$(EXP2_SEGMENTS))
+	$(call run_pwl_generation,$(EXP3_SAMPLES),$(EXP3_MODELS),$(EXP3_SEGMENTS))
+	$(call run_pwl_generation,$(EXP5_SAMPLES),$(EXP5_MODELS),$(EXP5_SEGMENTS))
+	$(call run_pwl_generation,$(EXP6_SAMPLES),$(EXP6_MODELS),$(EXP6_SEGMENTS))
 	@echo "--- Image PWL file generation complete. ---"
 
-# $(call run_pwl_generation,$(EXP1_SAMPLES),$(EXP1_MODELS),$(EXP1_SEGMENTS))
-# $(call run_pwl_generation,$(EXP2_SAMPLES),$(EXP2_MODELS),$(EXP2_SEGMENTS))
-# $(call run_pwl_generation,$(EXP3_SAMPLES),$(EXP3_MODELS),$(EXP3_SEGMENTS))
-# $(call run_pwl_generation,$(EXP5_SAMPLES),$(EXP5_MODELS),$(EXP5_SEGMENTS))
-# $(call run_pwl_generation,$(EXP6_SAMPLES),$(EXP6_MODELS),$(EXP6_SEGMENTS))
 
 pwl_img_mse:
 	@echo "--- Generating Piecewise (PWL) approximation files for Image Models... ---"

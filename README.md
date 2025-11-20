@@ -6,27 +6,46 @@ The project name **DAPA** is used only as an internal label for this repo and do
 
 ---
 
-## 1. Overview
+## Overview
 
-To eva the image task performance, move to src_cls, run the following Makefile
+### Environment Setup
+Setup Environment by:
+```
+pip install -r requirements.txt
+```
+
+### Demo Evaluation
+As running full test will take many times and put high requirment to your PC RAM and GPU VRAM.
+For quick the demo purpose, you can run the
+```make```
+which test ViT/Small/Base Model, with DAPA(16) segments.
+This cmd is running ViT Varients Model with DAPA-16(16 segments, No of image for distribution:256)
+You can view the result from 'src_cls'
+* src_cls/dst_log : You can view the test log file, include network performance;
+* src_cls/dst_plot : You can view the figure which include the original function and its DAPA approximation;
+!["DAPA_APPROX"](./figure/plot_pwl_vs_orig_gelu_act_vit-tiny_16seg.png)
+* src_cls/dst_pwl : You can view the json file, which is config file for DAPA include segment points and coffe for ax+b;
 
 ```
-This Makefile manages the full experiment pipeline for ViT PWL approximation and testing.
-
-Usage: make <target>
-
---- 1. FULL PIPELINE & EXPERIMENT TESTS ---
-  all             : Runs the complete experiment pipeline: clean, generate PWL/Poly files, and run EXP1, EXP3, and EXP5 tests.
-  pwl_img         : Generates Piecewise Linear (PWL) approximation files for Image models (DWMSE loss).
-  pwl_img_mse     : Generates PWL approximation files for Image models (MSE loss, for EXP6).
-  poly            : Generates Polynomial approximation files for GELU.
-  test_exp1       : Runs EXP1: Performance tests comparing DWMSE PWL and Polynomial GELU approximations.
-  test_exp3       : Runs EXP3: Architecture classification tests (FP32 and Fixed-Point) across various models.
-  test_exp5       : Runs EXP5: Ablation study comparing single vs. combined PWL approximation for Softmax/GELU.
-  test_exp6       : Runs EXP6: Tests comparing DWMSE-based vs. MSE-based PWL files.
-  demo            : Runs a quick demo test (vit-small with PWL-16 for Softmax/Activation).
-  ref             : Runs a reference test (vit-small using PyTorch FP32 baseline). @echo 
---- 3. UTILITY ---
-  clean           : Removes all generated files and directories (dst_pdf, dst_log, dst_pwl, etc.).
-  help            : Displays this help message.
+dst_pwl demo:
+    "intervals": [
+        [
+            "-inf",
+            "-9.930583"
+        ],
+        [
+            "-9.930583",
+            "-6.573429"
+        ],
+    ]
+    "params": [
+        {
+            "p1": 0.0,
+            "p0": 0.0
+        },
+        {
+            "p1": -1.611651355024917e-14,
+            "p0": -1.4029910592064354e-13
+        },
+    ]
 ```
