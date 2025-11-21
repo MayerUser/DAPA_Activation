@@ -12,6 +12,16 @@ Setup Environment by:
 pip install -r requirements.txt
 ```
 
+The test data and pre-trained model is loadding from Huggingface,
+Please login to Huggingface via:
+
+```
+    huggingface-cli login
+```
+
+As the ImageNet-1K need agreement from HuggingFace, pleae visit the [hugginface imagenet-1k](https://huggingface.co/datasets/ILSVRC/imagenet-1k) for the access.
+
+
 ## Demo Evaluation
 As running full test will take many times and put high requirment to your PC RAM and GPU VRAM.
 For quick the demo purpose, you can run the
