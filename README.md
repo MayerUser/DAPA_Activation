@@ -3,11 +3,9 @@
 > Anonymous code repository for double-blind conference review.  
 > The label "DAPA" is used only as an internal project name and does not reveal the final paper title.
 
-------------------------------------------------------------
-1. Environment Setup
-------------------------------------------------------------
+# Environment Setup
 
-1.1. Python environment
+## Python environment
 
 Install dependencies with:
 
@@ -16,7 +14,7 @@ Install dependencies with:
 The code has been tested with recent Python 3.x versions and a single GPU.  
 A GPU is strongly recommended, but small demos can run on CPU (slow).
 
-1.2. Hugging Face login
+## Hugging Face login
 
 Pre-trained models and the ImageNet-1K evaluation set are downloaded via Hugging Face.
 
@@ -35,9 +33,7 @@ Optionally configure a shared cache:
     export HF_HOME=/path/to/hf_cache
 
 
-------------------------------------------------------------
-2. Quick Demo (Recommended for Reviewers)
-------------------------------------------------------------
+# Quick Demo (Recommended for Reviewers)
 
 To avoid long runtimes and large memory usage, this repository provides a small demo that runs on a subset of ImageNet-1K and a few ViT variants.
 
@@ -83,9 +79,7 @@ All aggregated metrics are saved to:
     src_cls/dst_aux/demo1_metrics.json
 
 
-------------------------------------------------------------
-3. Where to Find Results
-------------------------------------------------------------
+# Where to Find Results
 
 All outputs live under "src_cls/":
 
@@ -128,9 +122,7 @@ Each interval [x_start, x_end] uses a linear function:
 Higher-order variants may also include coefficients p2, p3 for quadratic/cubic segments.
 
 
-------------------------------------------------------------
-4. Source Tree Overview
-------------------------------------------------------------
+# Source Tree Overview
 
 High-level structure:
 
@@ -152,9 +144,7 @@ Full ImageNet-1K evaluation:
 To evaluate on the full ImageNet-1K validation set rather than a 256-sample subset, adjust SAMPLE_NUM in "src_cls/config.py" (for example, set it to 50000). This will significantly increase runtime and resource usage.
 
 
-------------------------------------------------------------
-5. Reproducibility Notes
-------------------------------------------------------------
+# Reproducibility Notes
 
 - All demos use public Hugging Face models and datasets.
 - Randomness is limited (no training, only evaluation), so results should be broadly stable across runs.
@@ -164,9 +154,7 @@ This repository is provided solely for anonymous artifact / code review.
 Please do not attempt to de-anonymize based on model or dataset choices.
 
 
-------------------------------------------------------------
-6. Note
-------------------------------------------------------------
+# Note
 
 For fast testing and easy reproduction on a single GPU, the demo in this repository deliberately uses:
 
