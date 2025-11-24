@@ -1,0 +1,161 @@
+{
+    "config": {
+        "DEMO1_MODELS": [
+            "vit-tiny"
+        ],
+        "DEMO1_SEGMENTS": [
+            4,
+            6,
+            8,
+            10,
+            12,
+            14,
+            16
+        ],
+        "DEMO1_SAMPLES": 256,
+        "DEMO1_POLY_ORDER": [
+            4,
+            5,
+            6,
+            7,
+            8
+        ],
+        "X_MIN": -4.0,
+        "X_MAX": 4.0,
+        "BASELINE_TOP1": 75.51
+    },
+    "pwl": [
+        {
+            "model": "vit-tiny",
+            "segments": 4,
+            "samples": 256,
+            "MSE": 0.011493996131099065,
+            "DWMSE": 0.0019304297902128984,
+            "Top1": 68.75,
+            "DeltaTop1": -6.760000000000005,
+            "log": "dst_log/test_dm1_pwl_vit-tiny_4_256.log"
+        },
+        {
+            "model": "vit-tiny",
+            "segments": 6,
+            "samples": 256,
+            "MSE": 0.004161550871696077,
+            "DWMSE": 0.00045172661735576,
+            "Top1": 74.41,
+            "DeltaTop1": -1.1000000000000085,
+            "log": "dst_log/test_dm1_pwl_vit-tiny_6_256.log"
+        },
+        {
+            "model": "vit-tiny",
+            "segments": 8,
+            "samples": 256,
+            "MSE": 0.0030239557665844813,
+            "DWMSE": 0.00015871399450334092,
+            "Top1": 75.39,
+            "DeltaTop1": -0.12000000000000455,
+            "log": "dst_log/test_dm1_pwl_vit-tiny_8_256.log"
+        },
+        {
+            "model": "vit-tiny",
+            "segments": 10,
+            "samples": 256,
+            "MSE": 0.002827032306356052,
+            "DWMSE": 9.044983973219372e-05,
+            "Top1": 75.2,
+            "DeltaTop1": -0.3100000000000023,
+            "log": "dst_log/test_dm1_pwl_vit-tiny_10_256.log"
+        },
+        {
+            "model": "vit-tiny",
+            "segments": 12,
+            "samples": 256,
+            "MSE": 0.002814386856066669,
+            "DWMSE": 7.400231676761751e-05,
+            "Top1": 75.2,
+            "DeltaTop1": -0.3100000000000023,
+            "log": "dst_log/test_dm1_pwl_vit-tiny_12_256.log"
+        },
+        {
+            "model": "vit-tiny",
+            "segments": 14,
+            "samples": 256,
+            "MSE": 0.002824242780927758,
+            "DWMSE": 7.083980679749786e-05,
+            "Top1": 75.39,
+            "DeltaTop1": -0.12000000000000455,
+            "log": "dst_log/test_dm1_pwl_vit-tiny_14_256.log"
+        },
+        {
+            "model": "vit-tiny",
+            "segments": 16,
+            "samples": 256,
+            "MSE": 0.0028165034241484075,
+            "DWMSE": 7.050005380609805e-05,
+            "Top1": 75.39,
+            "DeltaTop1": -0.12000000000000455,
+            "log": "dst_log/test_dm1_pwl_vit-tiny_16_256.log"
+        }
+    ],
+    "poly": [
+        {
+            "model": "vit-tiny",
+            "order": 4,
+            "samples": 256,
+            "MSE": 0.0033498534358935646,
+            "DWMSE": 0.0035946058027642737,
+            "Top1": 53.91,
+            "DeltaTop1": -21.60000000000001,
+            "log": "dst_log/test_dm1_poly_vit-tiny_4_256.log"
+        },
+        {
+            "model": "vit-tiny",
+            "order": 5,
+            "samples": 256,
+            "MSE": 0.003349853435893565,
+            "DWMSE": 0.00359460580276425,
+            "Top1": 53.91,
+            "DeltaTop1": -21.60000000000001,
+            "log": "dst_log/test_dm1_poly_vit-tiny_5_256.log"
+        },
+        {
+            "model": "vit-tiny",
+            "order": 6,
+            "samples": 256,
+            "MSE": 0.0004268477560465412,
+            "DWMSE": 0.00043783963391880046,
+            "Top1": 72.85,
+            "DeltaTop1": -2.660000000000011,
+            "log": "dst_log/test_dm1_poly_vit-tiny_6_256.log"
+        },
+        {
+            "model": "vit-tiny",
+            "order": 7,
+            "samples": 256,
+            "MSE": 0.0004268477560465399,
+            "DWMSE": 0.0004378396339187914,
+            "Top1": 72.85,
+            "DeltaTop1": -2.660000000000011,
+            "log": "dst_log/test_dm1_poly_vit-tiny_7_256.log"
+        },
+        {
+            "model": "vit-tiny",
+            "order": 8,
+            "samples": 256,
+            "MSE": 4.417539689670238e-05,
+            "DWMSE": 4.3572983116382704e-05,
+            "Top1": 74.41,
+            "DeltaTop1": -1.1000000000000085,
+            "log": "dst_log/test_dm1_poly_vit-tiny_8_256.log"
+        }
+    ],
+    "correlation": {
+        "all": {
+            "label": "All (PWL + Poly)",
+            "n": 12,
+            "r_MSE": -0.1883919670461811,
+            "p_MSE": 0.5576295931809326,
+            "r_DWMSE": -0.9840025188899224,
+            "p_DWMSE": 8.033296949369684e-09
+        }
+    }
+}

@@ -1,0 +1,3 @@
+Fitting a polynomial of order 5 to GELU in range [-4, 4] using direct MSE minimization...
+Saved polynomial function to dst_poly/poly_gelu_5_order.json
+Saved comparison plot to dst_plot/plot_poly_gelu_5_order.png

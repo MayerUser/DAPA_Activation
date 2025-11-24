@@ -21,9 +21,15 @@ endif
 # --- Experiment Pipeline Configuration (EXP1, EXP3, EXP5) ---
 
 # DEMO : MSE vs Performance and DWMSE vs Performance
-DEMO_MODELS = vit-tiny vit-small vit-base
-DEMO_SEGMENTS = 16
-DEMO_SAMPLES = 256
+DEMO0_MODELS = vit-tiny vit-small vit-base
+DEMO0_SEGMENTS = 16
+DEMO0_SAMPLES = 256
+
+# Quick Demo 
+DEMO1_MODELS = vit-tiny
+DEMO1_SEGMENTS = 4 6 8 10 12 14 16
+DEMO1_SAMPLES = 256
+DEMO1_POLY_ORDER = 4 5 6 7 8
 
 # EXP1 : MSE vs Performance and DWMSE vs Performance
 EXP1_MODELS = vit-tiny vit-small vit-base
@@ -61,7 +67,7 @@ ALL_SAMPLES = $(sort $(EXP1_SAMPLES) $(EXP3_SAMPLES) $(EXP5_SAMPLES))
 
 # THETA: The DWMSE error threshold multiplier.
 # This can be overridden from the command line: make all-bits ANALYSIS_THETA=1.5
-ANALYSIS_THETA = 1.5
+ANALYSIS_THETA = 1.05
 
 # SAMPLES: The number of samples used to generate the PWL files
 # (must match dst_pwl/ directory)
@@ -83,7 +89,7 @@ ANALYSIS_MODEL_DEFAULT = vit-tiny
 
 # Default target: Run the entire pipeline from generation to testing.
 # all: clean pwl_img poly test_exp1 test_exp3 test_exp5
-all: clean pwl_img_demo test_demo
+all: clean pwl_img_demo poly_demo1 test_demo0 test_demo1
 
 define run_pwl_generation
 	@mkdir -p dst_log
@@ -120,24 +126,68 @@ endef
 pwl_img_demo:
 	@echo "--- Generating Piecewise (PWL) approximation files for Image Models... ---"
 	@mkdir -p dst_log dst_pdf dst_plot dst_pwl
-	$(call run_pwl_generation,$(DEMO_SAMPLES),$(DEMO_MODELS),$(DEMO_SEGMENTS))
+	$(call run_pwl_generation,$(DEMO0_SAMPLES),$(DEMO0_MODELS),$(DEMO0_SEGMENTS))
+	$(call run_pwl_generation,$(DEMO1_SAMPLES),$(DEMO1_MODELS),$(DEMO1_SEGMENTS))
 	@echo "--- Image PWL file generation complete. ---"
 
-test_demo:
+poly_demo1:
+	@echo "--- Generating Polynomial (POLY) approximation files for GELU... ---"
+	@mkdir -p dst_log dst_poly dst_plot
+	@$(foreach order,$(DEMO1_POLY_ORDER), \
+		if [ ! -f dst_log/poly_gelu_$(order).log ]; then \
+			echo ">> Generating POLY files for GELU with order $(order)..."; \
+			$(PYTHON) t2_make_poly.py --order $(order) 2>&1 | tee dst_log/poly_gelu_$(order).log; \
+		else \
+			echo ">> Skipping POLY generation for GELU order $(order) (log exists)."; \
+		fi; \
+	)
+	@echo "--- POLY file generation complete. ---"
+
+test_demo0:
 	@echo ""
-	@echo ">> Quick Demo Test for "
-	@$(foreach model,$(DEMO_MODELS), \
-		$(foreach seg,$(DEMO_SEGMENTS), \
+	@echo ">> Quick Demo Test for ViT B/S/T Performance"
+	@$(foreach model,$(DEMO0_MODELS), \
+		$(foreach seg,$(DEMO0_SEGMENTS), \
 			echo ""; \
-			if [ ! -f dst_log/test_exp1_pwl_$(model)_$(seg)_$(DEMO_SAMPLES).log ]; then \
+			if [ ! -f dst_log/test_dm0_pwl_$(model)_$(seg)_$(DEMO0_SAMPLES).log ]; then \
 				echo ">> Testing $(model) with PWL-$(seg)..."; \
-				$(PYTHON) t1_vit_run.py --model_name $(model) --softmax pwl-$(seg) --act pwl-$(seg) --num_samples $(DEMO_SAMPLES) $(CACHE_DIR_ARG) 2>&1 | tee dst_log/test_exp1_pwl_$(model)_$(seg)_$(DEMO_SAMPLES).log; \
+				$(PYTHON) t1_vit_run.py --model_name $(model) --softmax pwl-$(seg) --act pwl-$(seg) --num_samples $(DEMO0_SAMPLES) $(CACHE_DIR_ARG) 2>&1 | tee dst_log/test_dm0_pwl_$(model)_$(seg)_$(DEMO0_SAMPLES).log; \
 			else \
 				echo ">> Skipping EXP1 PWL test for $(model)-$(seg)seg (log exists)."; \
 			fi; \
 		) \
 	)
 
+
+test_demo1:
+	@echo ""
+	@echo ">> Quick Demo Test for (MSE vs \delta Performance) and (DWMSE vs \delta Performance) on ViT Tiny"
+	@echo ">> ViT Tiny DAPA with various segments"
+	@$(foreach model,$(DEMO1_MODELS), \
+		$(foreach seg,$(DEMO1_SEGMENTS), \
+			echo ""; \
+			if [ ! -f dst_log/test_dm1_pwl_$(model)_$(seg)_$(DEMO0_SAMPLES).log ]; then \
+				echo ">> Testing $(model) with PWL-$(seg)..."; \
+				$(PYTHON) t1_vit_run.py --model_name $(model) --softmax pwl-$(seg) --act pwl-$(seg) --num_samples $(DEMO1_SAMPLES) $(CACHE_DIR_ARG) 2>&1 | tee dst_log/test_dm1_pwl_$(model)_$(seg)_$(DEMO1_SAMPLES).log; \
+			else \
+				echo ">> Skipping DEMO1 PWL test for $(model)-$(seg)seg (log exists)."; \
+			fi; \
+		) \
+	)
+	@echo ">> ViT Tiny Poly with various order"
+	@$(foreach model,$(DEMO1_MODELS), \
+		$(foreach order,$(DEMO1_POLY_ORDER), \
+			echo ""; \
+			if [ ! -f dst_log/test_dm1_poly_$(model)_$(order)_$(EXP1_SAMPLES).log ]; then \
+				echo ">> Testing $(model) with poly-$(order) GELU..."; \
+				$(PYTHON) t1_vit_run.py --model_name $(model) --act poly-$(order) --num_samples $(DEMO1_SAMPLES) $(CACHE_DIR_ARG) 2>&1 | tee dst_log/test_dm1_poly_$(model)_$(order)_$(DEMO1_SAMPLES).log; \
+			else \
+				echo ">> Skipping EXP1 POLY test for $(model) with poly-$(order) (log exists)."; \
+			fi; \
+		) \
+	)
+	@echo ">> Calculate DeltaTop1 vs MSE/DWMSE"
+	python aux_demo1.py
 
 # Generate all necessary PWL approximation files for Image models.
 pwl_img:

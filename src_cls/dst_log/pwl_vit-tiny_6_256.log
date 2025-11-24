@@ -1,0 +1,37 @@
+Fast image processor class <class 'transformers.models.vit.image_processing_vit_fast.ViTImageProcessorFast'> is available for this model. Using slow image processor class. To use the fast image processor class set `use_fast=True`.
+Using the latest cached version of the dataset since ILSVRC/imagenet-1k couldn't be found on the Hugging Face Hub
+Found the latest cached dataset configuration 'default' at /home/mayer/HfHome/datasets/ILSVRC___imagenet-1k/default/0.0.0/49e2ee26f3810fb5a7536bbf732a7b07389a47b5 (last modified on Sun Oct 26 01:01:55 2025).
+ - Note: Found 'ViTSdpaSelfAttention', supporting modern ViT architectures.
+ - Initializing temporary directory for activation caching...
+Using loss = dwmse, PWL output dir = dst_pwl/256
+Using device: cuda
+Loading model 'vit-tiny'...
+Loading from Hugging Face Hub: WinKawaks/vit-tiny-patch16-224 (vision model)
+ - Using AutoModelForImageClassification
+Attaching hooks and modifying layers...
+✅ Attached 25 LayerNorm hooks.
+✅ Modified/Hooked 12 attention/softmax layers.
+✅ Attached 12 GELU/SiLU/Activation hooks.
+ - Applying transforms: Resize(256) -> CenterCrop(224)
+Loading 256 samples from 'ILSVRC/imagenet-1k' (streaming)...
+
+Running inference to capture activation distributions...
+Inference: 0it [00:00, ?it/s]Inference: 1it [00:00,  1.20it/s]Inference: 2it [00:00,  2.30it/s]Inference: 3it [00:01,  3.23it/s]Inference: 4it [00:01,  4.00it/s]Inference: 5it [00:01,  4.61it/s]Inference: 6it [00:01,  4.90it/s]Inference: 7it [00:01,  5.28it/s]Inference: 8it [00:01,  5.58it/s]Inference: 9it [00:02,  5.81it/s]Inference: 10it [00:02,  5.96it/s]Inference: 11it [00:02,  6.09it/s]Inference: 12it [00:02,  6.13it/s]Inference: 13it [00:02,  6.18it/s]Inference: 14it [00:02,  6.23it/s]Inference: 15it [00:03,  6.19it/s]Inference: 16it [00:03,  6.19it/s]Inference: 16it [00:03,  4.92it/s]
+Inference complete. Processing captured / loaded PDF data...
+
+--- Processing for EXP (Softmax) (softmax_input) ---
+  - Found existing PDF data: dst_pdf/256/pdf_exp_sm_vit-tiny_256samples.npz, loading instead of regenerating.
+  - Calculating percentiles from histogram...
+Saved PWL data to dst_pwl/256/pwl_exp_sm_vit-tiny_6seg.json
+Saved PWL comparison plot to dst_plot/256/plot_pwl_vs_orig_exp_sm_vit-tiny_6seg.png
+----------------------------------------
+
+--- Processing for Activation (gelu_input) ---
+  - Found existing PDF data: dst_pdf/256/pdf_gelu_act_vit-tiny_256samples.npz, loading instead of regenerating.
+  - Calculating percentiles from histogram...
+Saved PWL data to dst_pwl/256/pwl_gelu_act_vit-tiny_6seg.json
+Saved PWL comparison plot to dst_plot/256/plot_pwl_vs_orig_gelu_act_vit-tiny_6seg.png
+----------------------------------------
+
+
+ - Cleaning up temporary directory: /tmp/tmpve3ekicv

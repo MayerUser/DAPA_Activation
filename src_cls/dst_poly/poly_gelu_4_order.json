@@ -1,0 +1,24 @@
+{
+    "function": "gelu_poly_approx",
+    "order": 4,
+    "poly_range": [
+        -4,
+        4
+    ],
+    "coefficients": {
+        "p4": -0.007411971791910155,
+        "p3": -1.3057858306075418e-17,
+        "p2": 0.22949589008076654,
+        "p1": 0.5000000000000002,
+        "p0": 0.093290173071296
+    },
+    "lower_tail": {
+        "type": "constant",
+        "value": 0.0
+    },
+    "upper_tail": {
+        "type": "linear",
+        "slope": 1.0,
+        "intercept": 0.0
+    }
+}

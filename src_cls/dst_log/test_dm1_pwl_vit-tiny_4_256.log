@@ -1,0 +1,82 @@
+Fast image processor class <class 'transformers.models.vit.image_processing_vit_fast.ViTImageProcessorFast'> is available for this model. Using slow image processor class. To use the fast image processor class set `use_fast=True`.
+Using the latest cached version of the dataset since ILSVRC/imagenet-1k couldn't be found on the Hugging Face Hub
+Found the latest cached dataset configuration 'default' at /home/mayer/HfHome/datasets/ILSVRC___imagenet-1k/default/0.0.0/49e2ee26f3810fb5a7536bbf732a7b07389a47b5 (last modified on Sun Oct 26 01:01:55 2025).
+ - Note: Found 'ViTSdpaSelfAttention', supporting modern ViT/DeiT architectures.
+--- Test Configuration ---
+Model: vit-tiny
+Precision: FP32
+SQRT: torch, Softmax: pwl-4, Activation: pwl-4
+Loss (PWL source): dwmse  (dst_pwl if dwmse, dst_pwl_mse if mse)
+Test samples: 512, Batch size: 256
+
+ - Using AutoModelForImageClassification (standard head) for vit-tiny
+--- Modifying model ---
+  - Using PWL json base dir: dst_pwl
+  - Creating polynomial approximation module from pwl_gelu_act_vit-tiny_4seg.json
+  - Queuing PWL GELU/Activation replacement for 'vit.encoder.layer.0.intermediate.intermediate_act_fn' with pwl_gelu_act_vit-tiny_4seg.json
+  - Creating polynomial approximation module from pwl_gelu_act_vit-tiny_4seg.json
+  - Queuing PWL GELU/Activation replacement for 'vit.encoder.layer.1.intermediate.intermediate_act_fn' with pwl_gelu_act_vit-tiny_4seg.json
+  - Creating polynomial approximation module from pwl_gelu_act_vit-tiny_4seg.json
+  - Queuing PWL GELU/Activation replacement for 'vit.encoder.layer.2.intermediate.intermediate_act_fn' with pwl_gelu_act_vit-tiny_4seg.json
+  - Creating polynomial approximation module from pwl_gelu_act_vit-tiny_4seg.json
+  - Queuing PWL GELU/Activation replacement for 'vit.encoder.layer.3.intermediate.intermediate_act_fn' with pwl_gelu_act_vit-tiny_4seg.json
+  - Creating polynomial approximation module from pwl_gelu_act_vit-tiny_4seg.json
+  - Queuing PWL GELU/Activation replacement for 'vit.encoder.layer.4.intermediate.intermediate_act_fn' with pwl_gelu_act_vit-tiny_4seg.json
+  - Creating polynomial approximation module from pwl_gelu_act_vit-tiny_4seg.json
+  - Queuing PWL GELU/Activation replacement for 'vit.encoder.layer.5.intermediate.intermediate_act_fn' with pwl_gelu_act_vit-tiny_4seg.json
+  - Creating polynomial approximation module from pwl_gelu_act_vit-tiny_4seg.json
+  - Queuing PWL GELU/Activation replacement for 'vit.encoder.layer.6.intermediate.intermediate_act_fn' with pwl_gelu_act_vit-tiny_4seg.json
+  - Creating polynomial approximation module from pwl_gelu_act_vit-tiny_4seg.json
+  - Queuing PWL GELU/Activation replacement for 'vit.encoder.layer.7.intermediate.intermediate_act_fn' with pwl_gelu_act_vit-tiny_4seg.json
+  - Creating polynomial approximation module from pwl_gelu_act_vit-tiny_4seg.json
+  - Queuing PWL GELU/Activation replacement for 'vit.encoder.layer.8.intermediate.intermediate_act_fn' with pwl_gelu_act_vit-tiny_4seg.json
+  - Creating polynomial approximation module from pwl_gelu_act_vit-tiny_4seg.json
+  - Queuing PWL GELU/Activation replacement for 'vit.encoder.layer.9.intermediate.intermediate_act_fn' with pwl_gelu_act_vit-tiny_4seg.json
+  - Creating polynomial approximation module from pwl_gelu_act_vit-tiny_4seg.json
+  - Queuing PWL GELU/Activation replacement for 'vit.encoder.layer.10.intermediate.intermediate_act_fn' with pwl_gelu_act_vit-tiny_4seg.json
+  - Creating polynomial approximation module from pwl_gelu_act_vit-tiny_4seg.json
+  - Queuing PWL GELU/Activation replacement for 'vit.encoder.layer.11.intermediate.intermediate_act_fn' with pwl_gelu_act_vit-tiny_4seg.json
+  - [DEBUG] Replaced 'vit.encoder.layer.0.intermediate.intermediate_act_fn' successfully.
+  - [DEBUG] Replaced 'vit.encoder.layer.1.intermediate.intermediate_act_fn' successfully.
+  - [DEBUG] Replaced 'vit.encoder.layer.2.intermediate.intermediate_act_fn' successfully.
+  - [DEBUG] Replaced 'vit.encoder.layer.3.intermediate.intermediate_act_fn' successfully.
+  - [DEBUG] Replaced 'vit.encoder.layer.4.intermediate.intermediate_act_fn' successfully.
+  - [DEBUG] Replaced 'vit.encoder.layer.5.intermediate.intermediate_act_fn' successfully.
+  - [DEBUG] Replaced 'vit.encoder.layer.6.intermediate.intermediate_act_fn' successfully.
+  - [DEBUG] Replaced 'vit.encoder.layer.7.intermediate.intermediate_act_fn' successfully.
+  - [DEBUG] Replaced 'vit.encoder.layer.8.intermediate.intermediate_act_fn' successfully.
+  - [DEBUG] Replaced 'vit.encoder.layer.9.intermediate.intermediate_act_fn' successfully.
+  - [DEBUG] Replaced 'vit.encoder.layer.10.intermediate.intermediate_act_fn' successfully.
+  - [DEBUG] Replaced 'vit.encoder.layer.11.intermediate.intermediate_act_fn' successfully.
+  - Creating polynomial approximation module from pwl_exp_sm_vit-tiny_4seg.json
+  - [DEBUG] Patched forward method of 'vit.encoder.layer.0.attention.attention' (ViTSdpaSelfAttention)
+  - Creating polynomial approximation module from pwl_exp_sm_vit-tiny_4seg.json
+  - [DEBUG] Patched forward method of 'vit.encoder.layer.1.attention.attention' (ViTSdpaSelfAttention)
+  - Creating polynomial approximation module from pwl_exp_sm_vit-tiny_4seg.json
+  - [DEBUG] Patched forward method of 'vit.encoder.layer.2.attention.attention' (ViTSdpaSelfAttention)
+  - Creating polynomial approximation module from pwl_exp_sm_vit-tiny_4seg.json
+  - [DEBUG] Patched forward method of 'vit.encoder.layer.3.attention.attention' (ViTSdpaSelfAttention)
+  - Creating polynomial approximation module from pwl_exp_sm_vit-tiny_4seg.json
+  - [DEBUG] Patched forward method of 'vit.encoder.layer.4.attention.attention' (ViTSdpaSelfAttention)
+  - Creating polynomial approximation module from pwl_exp_sm_vit-tiny_4seg.json
+  - [DEBUG] Patched forward method of 'vit.encoder.layer.5.attention.attention' (ViTSdpaSelfAttention)
+  - Creating polynomial approximation module from pwl_exp_sm_vit-tiny_4seg.json
+  - [DEBUG] Patched forward method of 'vit.encoder.layer.6.attention.attention' (ViTSdpaSelfAttention)
+  - Creating polynomial approximation module from pwl_exp_sm_vit-tiny_4seg.json
+  - [DEBUG] Patched forward method of 'vit.encoder.layer.7.attention.attention' (ViTSdpaSelfAttention)
+  - Creating polynomial approximation module from pwl_exp_sm_vit-tiny_4seg.json
+  - [DEBUG] Patched forward method of 'vit.encoder.layer.8.attention.attention' (ViTSdpaSelfAttention)
+  - Creating polynomial approximation module from pwl_exp_sm_vit-tiny_4seg.json
+  - [DEBUG] Patched forward method of 'vit.encoder.layer.9.attention.attention' (ViTSdpaSelfAttention)
+  - Creating polynomial approximation module from pwl_exp_sm_vit-tiny_4seg.json
+  - [DEBUG] Patched forward method of 'vit.encoder.layer.10.attention.attention' (ViTSdpaSelfAttention)
+  - Creating polynomial approximation module from pwl_exp_sm_vit-tiny_4seg.json
+  - [DEBUG] Patched forward method of 'vit.encoder.layer.11.attention.attention' (ViTSdpaSelfAttention)
+--- Model modification complete ---
+
+ - Applying transforms: Resize(256) -> CenterCrop(224)
+Loading 512 samples from 'ILSVRC/imagenet-1k' (streaming)...
+Evaluating (FP32): 0it [00:00, ?it/s]Evaluating (FP32): 1it [00:01,  1.54s/it]Evaluating (FP32): 2it [00:01,  1.28it/s]Evaluating (FP32): 3it [00:02,  1.85it/s]Evaluating (FP32): 4it [00:02,  2.34it/s]Evaluating (FP32): 4it [00:02,  1.71it/s]
+
+--- Results ---
+Top-1 Accuracy on 512 samples (FP32): 68.75%
