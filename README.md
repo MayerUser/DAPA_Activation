@@ -163,8 +163,10 @@ Because of this, the numerical results you obtain here may differ slightly from 
 
 As an illustration, one representative run for Demo 1 (combining piecewise-linear and polynomial cases) produced:
 
+```
     Correlation (All (PWL + Poly)):
   \Delta Top1 vs MSE:   r = -0.1505, p = 6.4052e-01
   \Delta Top1 vs DWMSE: r = -0.9716, p = 1.3762e-07
+```
 
 In this run, the correlation between ΔAccuracy and DWMSE is very strong and highly significant, whereas the correlation between ΔAccuracy and MSE is weak and not statistically significant. This behavior is representative of the trend observed in our full experiments, even though individual numbers may vary slightly across runs.
