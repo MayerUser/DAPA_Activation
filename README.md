@@ -147,14 +147,10 @@ To evaluate on the full ImageNet-1K validation set rather than a 256-sample subs
 # Reproducibility Notes
 
 - All demos use public Hugging Face models and datasets.
-- Randomness is limited (no training, only evaluation), so results should be broadly stable across runs.
 - GPU/driver differences may cause minor numerical variations but should not affect the overall trends relating MSE / DWMSE to accuracy.
 
 This repository is provided solely for anonymous artifact / code review.  
 Please do not attempt to de-anonymize based on model or dataset choices.
-
-
-# Note
 
 For fast testing and easy reproduction on a single GPU, the demo in this repository deliberately uses:
 
@@ -168,7 +164,7 @@ Because of this, the numerical results you obtain here may differ slightly from 
 As an illustration, one representative run for Demo 1 (combining piecewise-linear and polynomial cases) produced:
 
     Correlation (All (PWL + Poly)):
-      DeltaTop1 vs MSE:   r = -0.1884, p = 5.5763e-01
-      DeltaTop1 vs DWMSE: r = -0.9840, p = 8.0333e-09
+  \Delta Top1 vs MSE:   r = -0.1505, p = 6.4052e-01
+  \Delta Top1 vs DWMSE: r = -0.9716, p = 1.3762e-07
 
 In this run, the correlation between ΔAccuracy and DWMSE is very strong and highly significant, whereas the correlation between ΔAccuracy and MSE is weak and not statistically significant. This behavior is representative of the trend observed in our full experiments, even though individual numbers may vary slightly across runs.

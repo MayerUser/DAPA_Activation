@@ -1,13 +1,13 @@
+/home/maoyang/.conda/envs/NLP_BASE/lib/python3.9/site-packages/requests/__init__.py:109: RequestsDependencyWarning: urllib3 (2.1.0) or chardet (None)/charset_normalizer (3.3.2) doesn't match a supported version!
+  warnings.warn(
 Fast image processor class <class 'transformers.models.vit.image_processing_vit_fast.ViTImageProcessorFast'> is available for this model. Using slow image processor class. To use the fast image processor class set `use_fast=True`.
-Using the latest cached version of the dataset since ILSVRC/imagenet-1k couldn't be found on the Hugging Face Hub
-Found the latest cached dataset configuration 'default' at /home/mayer/HfHome/datasets/ILSVRC___imagenet-1k/default/0.0.0/49e2ee26f3810fb5a7536bbf732a7b07389a47b5 (last modified on Sun Oct 26 01:01:55 2025).
  - Note: Found 'ViTSdpaSelfAttention', supporting modern ViT/DeiT architectures.
 --- Test Configuration ---
 Model: vit-tiny
 Precision: FP32
 SQRT: torch, Softmax: torch, Activation: poly-6
 Loss (PWL source): dwmse  (dst_pwl if dwmse, dst_pwl_mse if mse)
-Test samples: 512, Batch size: 256
+Test samples: 2048, Batch size: 256
 
  - Using AutoModelForImageClassification (standard head) for vit-tiny
 --- Modifying model ---
@@ -51,8 +51,8 @@ Test samples: 512, Batch size: 256
 --- Model modification complete ---
 
  - Applying transforms: Resize(256) -> CenterCrop(224)
-Loading 512 samples from 'ILSVRC/imagenet-1k' (streaming)...
-Evaluating (FP32): 0it [00:00, ?it/s]Evaluating (FP32): 1it [00:01,  1.56s/it]Evaluating (FP32): 2it [00:01,  1.29it/s]Evaluating (FP32): 3it [00:02,  1.91it/s]Evaluating (FP32): 4it [00:02,  2.45it/s]Evaluating (FP32): 4it [00:02,  1.77it/s]
+Loading 2048 samples from 'ILSVRC/imagenet-1k' (streaming)...
+Evaluating (FP32): 0it [00:00, ?it/s]Evaluating (FP32): 1it [00:14, 14.18s/it]Evaluating (FP32): 2it [00:14,  6.03s/it]Evaluating (FP32): 3it [00:14,  3.45s/it]Evaluating (FP32): 4it [00:15,  2.22s/it]Evaluating (FP32): 5it [00:15,  1.54s/it]Evaluating (FP32): 6it [00:15,  1.13s/it]Evaluating (FP32): 7it [00:16,  1.15it/s]Evaluating (FP32): 8it [00:16,  1.44it/s]Evaluating (FP32): 8it [00:16,  2.08s/it]
 
 --- Results ---
-Top-1 Accuracy on 512 samples (FP32): 72.85%
+Top-1 Accuracy on 2048 samples (FP32): 74.95%

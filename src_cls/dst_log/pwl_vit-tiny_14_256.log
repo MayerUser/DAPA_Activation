@@ -1,6 +1,6 @@
+/home/maoyang/.conda/envs/NLP_BASE/lib/python3.9/site-packages/requests/__init__.py:109: RequestsDependencyWarning: urllib3 (2.1.0) or chardet (None)/charset_normalizer (3.3.2) doesn't match a supported version!
+  warnings.warn(
 Fast image processor class <class 'transformers.models.vit.image_processing_vit_fast.ViTImageProcessorFast'> is available for this model. Using slow image processor class. To use the fast image processor class set `use_fast=True`.
-Using the latest cached version of the dataset since ILSVRC/imagenet-1k couldn't be found on the Hugging Face Hub
-Found the latest cached dataset configuration 'default' at /home/mayer/HfHome/datasets/ILSVRC___imagenet-1k/default/0.0.0/49e2ee26f3810fb5a7536bbf732a7b07389a47b5 (last modified on Sun Oct 26 01:01:55 2025).
  - Note: Found 'ViTSdpaSelfAttention', supporting modern ViT architectures.
  - Initializing temporary directory for activation caching...
 Using loss = dwmse, PWL output dir = dst_pwl/256
@@ -16,7 +16,7 @@ Attaching hooks and modifying layers...
 Loading 256 samples from 'ILSVRC/imagenet-1k' (streaming)...
 
 Running inference to capture activation distributions...
-Inference: 0it [00:00, ?it/s]Inference: 1it [00:00,  1.20it/s]Inference: 2it [00:00,  2.30it/s]Inference: 3it [00:01,  3.23it/s]Inference: 4it [00:01,  4.02it/s]Inference: 5it [00:01,  4.64it/s]Inference: 6it [00:01,  5.13it/s]Inference: 7it [00:01,  5.48it/s]Inference: 8it [00:01,  5.75it/s]Inference: 9it [00:02,  5.96it/s]Inference: 10it [00:02,  6.10it/s]Inference: 11it [00:02,  6.19it/s]Inference: 12it [00:02,  6.25it/s]Inference: 13it [00:02,  6.23it/s]Inference: 14it [00:02,  6.30it/s]Inference: 15it [00:03,  6.35it/s]Inference: 16it [00:03,  6.39it/s]Inference: 16it [00:03,  5.01it/s]
+Inference: 0it [00:00, ?it/s]Inference: 1it [00:12, 12.21s/it]Inference: 2it [00:12,  5.09s/it]Inference: 4it [00:12,  1.96s/it]Inference: 6it [00:12,  1.08s/it]Inference: 7it [00:12,  1.19it/s]Inference: 8it [00:12,  1.55it/s]Inference: 9it [00:13,  2.01it/s]Inference: 10it [00:13,  2.59it/s]Inference: 11it [00:13,  3.29it/s]Inference: 13it [00:13,  4.74it/s]Inference: 15it [00:13,  6.03it/s]Inference: 16it [00:13,  1.16it/s]
 Inference complete. Processing captured / loaded PDF data...
 
 --- Processing for EXP (Softmax) (softmax_input) ---
@@ -34,4 +34,4 @@ Saved PWL comparison plot to dst_plot/256/plot_pwl_vs_orig_gelu_act_vit-tiny_14s
 ----------------------------------------
 
 
- - Cleaning up temporary directory: /tmp/tmp66fa6jw0
+ - Cleaning up temporary directory: /tmp/tmpn_oh03gt

@@ -1,7 +1,7 @@
 # aux_demo1.py
 #
-# Compute MSE (uniform over x in [-4, 4]) and DWMSE (w.r.t. GELU input PDF)
-# for:
+# Compute MSE (uniform over x in [-4, 4]) and DWMSE (distribution-weighted MSE
+# also restricted to x in [-4, 4]) for:
 #   - PWL DAPA GELU (vit-tiny, segments 4/6/8/10/12/14/16)
 #   - Polynomial GELU (orders 4/5/6/7/8)
 # and read corresponding Top-1 accuracy from dst_log.
@@ -9,8 +9,7 @@
 # Also compute DeltaTop1 = Top1 - BASELINE_TOP1
 # and Pearson correlation (r, p-value) between:
 #   - DeltaTop1 vs MSE
-#   - DeltaTop1 vs DWMSE
-# for ALL points combined (PWL+Poly).
+#   - DeltaTop1 vs DWMSE (both over [-4, 4])
 
 import json
 import re
@@ -28,6 +27,7 @@ DEMO1_SEGMENTS = [4, 6, 8, 10, 12, 14, 16]
 DEMO1_SAMPLES = 256
 DEMO1_POLY_ORDER = [4, 5, 6, 7, 8]
 
+# Range used for both MSE and DWMSE
 X_MIN, X_MAX = -4.0, 4.0
 
 # vit-tiny FP32 baseline Top-1 accuracy (percent)
@@ -83,23 +83,29 @@ def compute_mse_dwmse(approx_func, hist: np.ndarray, bin_edges: np.ndarray,
                       x_min: float = X_MIN, x_max: float = X_MAX):
     """
     Compute:
-      - MSE  = E_{x ~ Uniform[x_min,x_max]}[(GELU(x) - f(x))^2]
-              (approximated using the bin centers over [x_min,x_max])
-      - DWMSE = E_{x ~ pdf}[(GELU(x) - f(x))^2] ≈ sum(pdf * error^2 * dx)
+      - MSE:   E_{x ~ Uniform[x_min,x_max]}[(GELU(x) - f(x))^2],
+               approximated over bin centers in [x_min, x_max].
+      - DWMSE: E_{x ~ p(x) | x in [x_min,x_max]}[(GELU(x) - f(x))^2],
+               i.e., distribution-weighted MSE restricted to [x_min, x_max].
 
-    Both are computed discretely over the pdf bin centers restricted to [x_min, x_max].
+    Both metrics are now explicitly computed only over the range [x_min, x_max].
     """
-    x, pdf, bin_width, (eff_min, eff_max) = select_range(hist, bin_edges, x_min, x_max)
+    x, pdf_segment, bin_width, (eff_min, eff_max) = select_range(hist, bin_edges, x_min, x_max)
 
     true_vals = gelu_exact(x)
     approx_vals = approx_func(x)
     err_sq = (true_vals - approx_vals) ** 2
 
-    # MSE over uniform in [x_min, x_max] (Riemann sum)
+    # MSE over uniform distribution on [x_min, x_max]
     mse = np.sum(err_sq * bin_width) / (x_max - x_min)
 
-    # DWMSE over the empirical pdf (pdf already integrates ~1 on its full range)
-    dwmse = np.sum(pdf * err_sq * bin_width)
+    # DWMSE over the empirical pdf restricted to [x_min, x_max],
+    # normalized so it is an expectation under p(x | x in [x_min,x_max]).
+    mass = np.sum(pdf_segment * bin_width)
+    if mass > 0:
+        dwmse = np.sum(pdf_segment * err_sq * bin_width) / mass
+    else:
+        dwmse = float("nan")
 
     return mse, dwmse
 

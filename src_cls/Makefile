@@ -168,7 +168,7 @@ test_demo1:
 			echo ""; \
 			if [ ! -f dst_log/test_dm1_pwl_$(model)_$(seg)_$(DEMO0_SAMPLES).log ]; then \
 				echo ">> Testing $(model) with PWL-$(seg)..."; \
-				$(PYTHON) t1_vit_run.py --model_name $(model) --softmax pwl-$(seg) --act pwl-$(seg) --num_samples $(DEMO1_SAMPLES) $(CACHE_DIR_ARG) 2>&1 | tee dst_log/test_dm1_pwl_$(model)_$(seg)_$(DEMO1_SAMPLES).log; \
+				$(PYTHON) t1_vit_run.py --model_name $(model) --act pwl-$(seg) --num_samples $(DEMO1_SAMPLES) $(CACHE_DIR_ARG) 2>&1 | tee dst_log/test_dm1_pwl_$(model)_$(seg)_$(DEMO1_SAMPLES).log; \
 			else \
 				echo ">> Skipping DEMO1 PWL test for $(model)-$(seg)seg (log exists)."; \
 			fi; \

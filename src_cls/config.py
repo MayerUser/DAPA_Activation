@@ -96,6 +96,6 @@ SWIN_LARGE_CONFIG = {
 
 
 # Testing Configuration
-SAMPLE_NUM = 512 # Number of sample images to test on MAX 50000
+SAMPLE_NUM = 2048 # Number of sample images to test on MAX 50000
 # SAMPLE_NUM = 8192*2 # Number of sample images to test on MAX 50000
 BATCH_SIZE = 256 # Batch size for data loader
