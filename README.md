@@ -24,7 +24,7 @@ Pre-trained models and the ImageNet-1K evaluation set are downloaded via Hugging
 
 2. Request access to ImageNet-1K on Hugging Face:
 
-    Dataset: ILSVRC/imagenet-1k
+    Dataset: [ILSVRC/imagenet-1k](https://huggingface.co/datasets/ILSVRC/imagenet-1k)
 
 After access is granted, the code can stream the validation split automatically.
 
