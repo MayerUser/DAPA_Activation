@@ -1,37 +1,0 @@
-/home/maoyang/.conda/envs/NLP_BASE/lib/python3.9/site-packages/requests/__init__.py:109: RequestsDependencyWarning: urllib3 (2.1.0) or chardet (None)/charset_normalizer (3.3.2) doesn't match a supported version!
-  warnings.warn(
-Fast image processor class <class 'transformers.models.vit.image_processing_vit_fast.ViTImageProcessorFast'> is available for this model. Using slow image processor class. To use the fast image processor class set `use_fast=True`.
- - Note: Found 'ViTSdpaSelfAttention', supporting modern ViT architectures.
- - Initializing temporary directory for activation caching...
-Using loss = dwmse, PWL output dir = dst_pwl/256
-Using device: cuda
-Loading model 'vit-tiny'...
-Loading from Hugging Face Hub: WinKawaks/vit-tiny-patch16-224 (vision model)
- - Using AutoModelForImageClassification
-Attaching hooks and modifying layers...
-✅ Attached 25 LayerNorm hooks.
-✅ Modified/Hooked 12 attention/softmax layers.
-✅ Attached 12 GELU/SiLU/Activation hooks.
- - Applying transforms: Resize(256) -> CenterCrop(224)
-Loading 256 samples from 'ILSVRC/imagenet-1k' (streaming)...
-
-Running inference to capture activation distributions...
-Inference: 0it [00:00, ?it/s]Inference: 1it [00:10, 10.33s/it]Inference: 2it [00:11,  5.15s/it]Inference: 3it [00:11,  2.86s/it]Inference: 4it [00:12,  1.77s/it]Inference: 5it [00:12,  1.17s/it]Inference: 6it [00:12,  1.24it/s]Inference: 7it [00:12,  1.73it/s]Inference: 8it [00:12,  2.34it/s]Inference: 9it [00:12,  3.08it/s]Inference: 10it [00:12,  3.88it/s]Inference: 11it [00:12,  4.69it/s]Inference: 12it [00:12,  5.49it/s]Inference: 13it [00:13,  6.31it/s]Inference: 14it [00:13,  7.08it/s]Inference: 16it [00:13,  8.24it/s]Inference: 16it [00:13,  1.20it/s]
-Inference complete. Processing captured / loaded PDF data...
-
---- Processing for EXP (Softmax) (softmax_input) ---
-  - Found existing PDF data: dst_pdf/256/pdf_exp_sm_vit-tiny_256samples.npz, loading instead of regenerating.
-  - Calculating percentiles from histogram...
-Saved PWL data to dst_pwl/256/pwl_exp_sm_vit-tiny_4seg.json
-Saved PWL comparison plot to dst_plot/256/plot_pwl_vs_orig_exp_sm_vit-tiny_4seg.png
-----------------------------------------
-
---- Processing for Activation (gelu_input) ---
-  - Found existing PDF data: dst_pdf/256/pdf_gelu_act_vit-tiny_256samples.npz, loading instead of regenerating.
-  - Calculating percentiles from histogram...
-Saved PWL data to dst_pwl/256/pwl_gelu_act_vit-tiny_4seg.json
-Saved PWL comparison plot to dst_plot/256/plot_pwl_vs_orig_gelu_act_vit-tiny_4seg.png
-----------------------------------------
-
-
- - Cleaning up temporary directory: /tmp/tmphsl2a633

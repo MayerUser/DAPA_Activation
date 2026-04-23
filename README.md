@@ -1,172 +1,177 @@
-# DAPA Project (Anonymous Code for Review)
+# DAPA: Distribution-Aware Piecewise Activation Functions
 
-> Anonymous code repository for double-blind conference review.  
-> The label "DAPA" is used only as an internal project name and does not reveal the final paper title.
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Conference](https://img.shields.io/badge/Accepted-DAC_2026-success.svg)](#)
 
-# Environment Setup
+This repository contains the official implementation of the paper: **"DAPA: Distribution Aware Piecewise Activation Functions for On-Device Transformer Inference and Training"** (Accepted at DAC 2026).
 
-## Python environment
+## 💡 The Core Insight: Why DAPA?
 
-Install dependencies with:
+When deploying Large Language Models (LLMs) and Vision Transformers (ViTs) on resource-constrained edge hardware (e.g., NPUs, FPGAs), replacing complex non-linear functions (like `exp` and `GELU`) with Piecewise Linear (PWL) approximation is a standard practice to save DSPs and power.
 
-    pip install -r requirements.txt
+However, traditional Uniform PWL optimized for Mean Squared Error (MSE) often leads to **catastrophic attention collapse** during autoregressive generation. Because MSE ignores the highly skewed pre-activation data distribution caused by the Causal Mask, it introduces asymmetric noise. Over multiple generation steps, this noise accumulates linearly `O(N)`, trapping the model in "repetition loops" or generating gibberish.
 
-The code has been tested with recent Python 3.x versions and a single GPU.  
-A GPU is strongly recommended, but small demos can run on CPU (slow).
+**DAPA solves this by shifting the paradigm from Numerical Approximation to Distribution Matching:**
+1. **Distribution-Weighted MSE (DWMSE):** DAPA allocates dense hardware segments (knots) exclusively to the high-probability active regions of the input distribution, ignoring the "dead zones".
+2. **Symmetric Zero-Mean Noise:** By matching the mathematical expectation of the noise to the true distribution, DAPA converts the catastrophic `O(N)` linear error drift into a random walk. 
 
-## Hugging Face login
+The result? **A 16-segment Fixed-Point (Fix16) hardware logic that reduces GELU/Softmax DSP utilization by 16x~48x, while perfectly maintaining the logical reasoning and text generation capabilities of a full-precision baseline.**
 
+---
+
+## 📂 Repository Structure
+
+The codebase is systematically organized into independent evaluation environments for Vision and NLP tasks. We adopt a strict naming convention: `m_*` scripts contain core algorithmic modules (hardware simulation, bit-width search), and `t_*` scripts contain test pipelines and model evaluation logic.
+
+```text
+DAPA_Activation/
+├── LICENSE                     # Apache 2.0 License
+├── README.md                   # This file
+├── requirements.txt            # Python dependencies
+│
+├── figure/                     # Directory for generated plots and visualizations
+│   └── plot_pwl_vs_orig_gelu_act_vit-tiny_16seg.png
+│
+├── src_img_cls/                # 👁️ Vision Transformers (ViT, DeiT, Swin) Evaluation
+│   ├── Makefile                # Automation for all vision experiments (EXP1 to EXP6)
+│   ├── config.py               # Global configurations for image classification tasks
+│   │
+│   ├── m0_udanf.py             # Floating-point DAPA (PWL) PyTorch modules
+│   ├── m1_poly_act.py          # Baseline Polynomial approximation modules
+│   ├── m2_find_fixed_bit.py    # DWMSE-guided Fixed-Point Bit-Width Search (Paper Algorithm 1)
+│   ├── m3_udanf_fixed.py       # Fixed-point DAPA hardware simulation modules
+│   │
+│   ├── t0_make_pwl.py          # Generates PWL JSON parameters based on data distribution
+│   ├── t1_vit_run.py           # Evaluates Vision models using floating-point DAPA
+│   ├── t2_make_poly.py         # Generates polynomial approximation parameters
+│   └── t3_vit_run_fixed.py     # Evaluates Vision models using Fixed-point simulated DAPA
+│
+└── src_nlp_llm/                # 💬 NLP & Large Language Models (GPT-2, LLaMA-2) Evaluation
+    ├── Makefile                # Automation for GPT-2 evaluation and LLaMA-2 text generation
+    ├── config.py               # Global configurations for NLP tasks
+    │
+    ├── m0_udanf.py             # Floating-point DAPA (PWL) PyTorch modules
+    ├── m1_poly_act.py          # Baseline Polynomial approximation modules
+    ├── m2_dwmse_cal.py         # Utilities to calculate Distribution-Weighted MSE (DWMSE)
+    ├── m3_find_fixed_bit.py    # Fixed-Point Bit-Width Search for LLM activations
+    ├── m3_udanf_fixed.py       # Fixed-point DAPA hardware simulation modules
+    │
+    ├── t0_make_pwl.py          # Generates PWL parameters using LLM pre-activation distributions
+    ├── t0_make_poly.py         # Generates polynomial approximation parameters for NLP
+    ├── t2_gpt2_run.py          # Evaluates GPT-2 perplexity (Float)
+    ├── t2b_gpt2_run_fixed.py   # Evaluates GPT-2 perplexity (Fixed-point)
+    ├── t3_llama_demo.py        # Evaluates LLaMA-2 7B WikiText perplexity (Float & Fixed)
+    └── t4_llama_generate.py    # Core script for LLaMA-2 Autoregressive Text Generation Demo
+```
+## 🛠️ Installation & Setup
+
+### 1. Python Environment
+
+Install dependencies with: ```pip install -r requirements.txt```
+
+### 2. Hugging Face Login
 Pre-trained models and the ImageNet-1K evaluation set are downloaded via Hugging Face.
 
-1. Login:
+* Step 1: Login to your Hugging Face account: ```huggingface-cli login```
+* Step 2: Request access to ImageNet-1K on Hugging Face Dataset: ILSVRC/imagenet-1k
+* Step 3: (Optional) Configure a shared cache to avoid redundant downloads ```export HF_HOME=/path/to/hf_cache```
 
-    huggingface-cli login
+## 🚀 Real Text Generation Demo (LLaMA-2 7B)
 
-2. Request access to ImageNet-1K on Hugging Face:
-
-    Dataset: [ILSVRC/imagenet-1k](https://huggingface.co/datasets/ILSVRC/imagenet-1k)
-
-After access is granted, the code can stream the validation split automatically.
-
-Optionally configure a shared cache:
-
-    export HF_HOME=/path/to/hf_cache
-
-
-# Quick Demo (Recommended for Reviewers)
-
-To avoid long runtimes and large memory usage, this repository provides a small demo that runs on a subset of ImageNet-1K and a few ViT variants.
-
-From the repository root:
-
-    make
-
-This launches two demos under "src_cls/".
-
-2.1. Demo 0 – ViT variants with 16-segment DAPA
-
-For each ViT variant (vit-tiny, vit-small, vit-base) and 16 segments, the demo:
-
-1) Generates a DAPA (piecewise linear) approximation of the activation and softmax from 256 samples.
-2) Evaluates the corresponding ViT model using this 16-segment DAPA configuration.
-
-This provides a quick view of how a single, moderately fine-grained DAPA setting behaves across several ViT backbones.
-
-2.2. Demo 1 – ViT-Tiny: DAPA vs Polynomial GELU
-
-For ViT-Tiny, the demo compares:
-
-- DAPA GELU with segments: 4, 6, 8, 10, 12, 14, 16
-- Polynomial GELU with orders: 4, 5, 6, 7, 8
-
-Internally, the demo:
-
-1) Evaluates ViT-Tiny with several DAPA segment counts.
-2) Evaluates ViT-Tiny with several polynomial GELU approximations.
-3) Aggregates metrics into a single JSON file for analysis.
-
-For each configuration, the following quantities are computed:
-
-- MSE between exact GELU and the approximation on [-4, 4] (uniform in x).
-- DWMSE (distribution-weighted MSE) with respect to the empirical activation PDF.
-- Top-1 accuracy and accuracy drop (ΔAccuracy) relative to a ViT-Tiny FP32 baseline.
-- Pearson correlation (r, p-value) between:
-    - ΔAccuracy vs MSE
-    - ΔAccuracy vs DWMSE
-
-All aggregated metrics are saved to:
-
-    src_cls/dst_aux/demo1_metrics.json
-
-
-# Where to Find Results
-
-All outputs live under "src_cls/":
-
-- Logs: src_cls/dst_log/
-  Test logs, including reported Top-1 accuracy.
-
-- Plots: src_cls/dst_plot/
-  Figures comparing original functions vs DAPA / polynomial approximations, for example:
-    plot_pwl_vs_orig_gelu_act_vit-tiny_16seg.png
-
-- PWL (DAPA) configs: src_cls/dst_pwl/
-  JSON files describing the piecewise segments and coefficients.
-
-- Polynomial configs: src_cls/dst_poly/
-  JSON files describing polynomial GELU approximations and tails.
-
-- PDFs (distributions): src_cls/dst_pdf/
-  Empirical PDFs of activations / softmax inputs used for DWMSE.
-
-- Aggregated metrics: src_cls/dst_aux/
-  Metrics and correlations produced by the demo analysis.
-
-Example PWL JSON (DAPA config):
-
-    {
-      "intervals": [
-        ["-inf", "-9.930583"],
-        ["-9.930583", "-6.573429"]
-      ],
-      "params": [
-        { "p1": 0.0, "p0": 0.0 },
-        { "p1": -1.611651355024917e-14, "p0": -1.4029910592064354e-13 }
-      ]
-    }
-
-Each interval [x_start, x_end] uses a linear function:
-
-    σ̂(x) = p1 * x + p0
-
-Higher-order variants may also include coefficients p2, p3 for quadratic/cubic segments.
-
-
-# Source Tree Overview
-
-High-level structure:
-
-    ├── figure/                  # Figures used in this README (not needed for code)
-    ├── LICENSE                  # License file
-    ├── Makefile                 # Top-level demo targets (see Section 2)
-    ├── README.md                # This file
-    ├── requirements.txt         # Python dependencies
-    └── src_cls/                 # DAPA for image classification Transformers
-        ├── config.py            # Global config; SAMPLE_NUM controls evaluation size
-        ├── m0_udanf.py          # DAPA-based activation implementation
-        ├── m1_poly_act.py       # Polynomial activation implementation
-        ├── Makefile             # Optional internal flow control
-        ├── t2_make_poly.py      # Polynomial GELU approximation generation
-        └── ...                  # Additional helper scripts for DAPA/PDF generation and ViT evaluation
-
-Full ImageNet-1K evaluation:
-
-To evaluate on the full ImageNet-1K validation set rather than a 256-sample subset, adjust SAMPLE_NUM in "src_cls/config.py" (for example, set it to 50000). This will significantly increase runtime and resource usage.
-
-
-# Reproducibility Notes
-
-- All demos use public Hugging Face models and datasets.
-- GPU/driver differences may cause minor numerical variations but should not affect the overall trends relating MSE / DWMSE to accuracy.
-
-This repository is provided solely for anonymous artifact / code review.  
-Please do not attempt to de-anonymize based on model or dataset choices.
-
-For fast testing and easy reproduction on a single GPU, the demo in this repository deliberately uses:
-
-- Only a small subset of ImageNet-1K (for example, 256 images by default), and
-- Empirical PDFs estimated from randomly sampled activations to compute DWMSE.
-
-Because of this, the numerical results you obtain here may differ slightly from the numbers reported in the final paper, due to different random seeds, sample subsets, or hardware. These differences affect exact values but do not change the qualitative conclusion:
-
-    Distribution-Weighted MSE (DWMSE) is a more reliable error metric than plain MSE for predicting how activation approximations impact end-to-end accuracy.
-
-As an illustration, one representative run for Demo 1 (combining piecewise-linear and polynomial cases) produced:
+To observe the "Attention Collapse" phenomenon and how DAPA prevents it, navigate to the NLP directory and run the interactive demo:
 
 ```
-    Correlation (All (PWL + Poly)):
-  \Delta Top1 vs MSE:   r = -0.1505, p = 6.4052e-01
-  \Delta Top1 vs DWMSE: r = -0.9716, p = 1.3762e-07
+cd src_nlp_llm
+make demo_llama_gen
+```
+You can also test your own sentences by passing arguments:
+
+```
+make demo_llama_gen PROMPT="The capital of France is Paris, and the capital of Japan is" MAX_TOKENS=60
 ```
 
-In this run, the correlation between ΔAccuracy and DWMSE is very strong and highly significant, whereas the correlation between ΔAccuracy and MSE is weak and not statistically significant. This behavior is representative of the trend observed in our full experiments, even though individual numbers may vary slightly across runs.
+### Example 1: Factual Recall
+
+Input: ```The capital of France is Paris, and the capital of Japan is```
+
+* [FP16 | Softmax: torch | Act: torch] (Baseline)
+
+    *** The capital of France is Paris, and the capital of Japan is *** Tokyo. The capital of France is Paris,
+
+* [FP16 | Softmax: pwl-8 | Act: pwl-8] (Uniform PWL)
+
+    *** The capital of France is Paris, and the capital of Japan is *** Tokyo. nobody knows the capital of the capital of ❌ (Attention Collapse)
+
+* [FP16 | Softmax: pwl-16 | Act: pwl-16] (DAPA)
+
+    *** The capital of France is Paris, and the capital of Japan is *** Tokyo. The capital of the United States is Washington ✅ (Stable Logic)
+
+
+### Example 2: Long-Context Storytelling
+Input: ```Once upon a time in a magical forest, there lived a tiny brave fox named Foxy. Foxy```
+
+* [FP16 | Softmax: torch | Act: torch] (Baseline)
+
+    *** Once upon a time in a magical forest, there lived a tiny brave fox named Foxy. Foxy *** was a very brave fox, but he was also very lonely. He wanted to find a friend, but he didn’t know where to look.
+One day, Foxy was walking through the forest when he
+
+* [FP16 | Softmax: pwl-8 | Act: pwl-8] (Uniform PWL)
+
+    *** Once upon a time in a magical forest, there lived a tiny brave fox named Foxy.Foxy. *** He was a very brave and kind fox. He was a very good friend to all the other animals in the forest. He was a very good friend to all the other animals in the forest. He was ❌ (Repetition Loop)
+
+* [FP16 | Softmax: pwl-16 | Act: pwl-16] (DAPA)
+
+    ***Once upon a time in a magical forest, there lived a tiny brave fox named Foxy. Foxy*** was a brave little fox. He was the smallest of the foxes in the forest. He was also the bravest. He was the only fox in the forest who was not afraid of the big bad ✅ (Perfect Syntax & Diversity)
+
+## 📊 Reproducing Paper Experiments
+You can reproduce the data for the tables and figures in the DAC 2026 paper using the provided Makefiles.
+
+### Part 1: Vision Transformers (src_img_cls/)
+
+Navigate to cd ```src_img_cls/```. Run make all for the full pipeline, or run specific targets:
+
+#### Figure 1 (MSE vs DWMSE Performance Correlation):
+
+```Bash
+make test_exp1
+```
+Evaluates how different error metrics correlate with actual ViT Top-1 accuracy drops.
+
+#### Figure 4 (Impact of Number of Samples):
+
+```Bash
+make test_exp2
+```
+Proves that DAPA can reliably model the distribution using as few as 4-16 calibration images.
+
+#### Table 2 (Image Classification Architecture vs Performance):
+
+```Bash
+make test_exp3
+```
+
+Runs the comprehensive 5-step evaluation across ViT, DeiT, and Swin variants, comparing Baseline, Softmax-only, GELU-only, and fully Fixed-Point Quantized (Q9.7/Q6.8) DAPA configurations.
+
+### Part 2: NLP & LLMs (src_nlp_llm/)
+Navigate to cd ```src_nlp_llm/```.
+
+#### Table 2 & Figure 2 (GPT-2 Perplexity Evaluation):
+
+```Bash
+make demo_gpt2
+```
+Generates PWL files and evaluates the perplexity (PPL) on the WikiText-2 dataset for the GPT-2 baseline, 8-seg, and 16-seg DAPA models.
+
+## 📝 License & Citation
+This project is open-sourced under the Apache License 2.0. You are free to use, modify, and distribute this software for both academic and commercial purposes, provided that proper attribution is given and the patent terms are respected.
+
+If you find this repository (or the DAPA framework) useful in your research, hardware design, or commercial products, please kindly cite our DAC 2026 paper:
+
+```
+@article{xiang2026dapa,
+  title={DAPA: Distribution Aware Piecewise Activation Functions for On-Device Transformer Inference and Training},
+  author={Xiang, Maoyang and Wang, Bo},
+  journal={arXiv preprint arXiv:2603.19338},
+  year={2026}
+}
+```
