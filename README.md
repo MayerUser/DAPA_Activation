@@ -67,7 +67,8 @@ DAPA_Activation/
 
 ### 1. Python Environment
 
-Install dependencies with: ```pip install -r requirements.txt```
+* Install dependencies with: ```pip install -r requirements.txt```
+* Note: This project is developed and optimized using CUDA 12.8 Nightly. Please ensure your local environment and drivers are compatible for the best performance.
 
 ### 2. Hugging Face Login
 Pre-trained models and the ImageNet-1K evaluation set are downloaded via Hugging Face.
@@ -96,15 +97,15 @@ Input: ```The capital of France is Paris, and the capital of Japan is```
 
 * [FP16 | Softmax: torch | Act: torch] (Baseline)
 
-    *** The capital of France is Paris, and the capital of Japan is *** Tokyo. The capital of France is Paris,
+    ***The capital of France is Paris, and the capital of Japan is*** Tokyo. The capital of France is Paris,
 
 * [FP16 | Softmax: pwl-8 | Act: pwl-8] (Uniform PWL)
 
-    *** The capital of France is Paris, and the capital of Japan is *** Tokyo. nobody knows the capital of the capital of ❌ (Attention Collapse)
+    ***The capital of France is Paris, and the capital of Japan is*** Tokyo. nobody knows the capital of the capital of ❌ (Attention Collapse)
 
 * [FP16 | Softmax: pwl-16 | Act: pwl-16] (DAPA)
 
-    *** The capital of France is Paris, and the capital of Japan is *** Tokyo. The capital of the United States is Washington ✅ (Stable Logic)
+    ***The capital of France is Paris, and the capital of Japan is*** Tokyo. The capital of the United States is Washington ✅ (Stable Logic)
 
 
 ### Example 2: Long-Context Storytelling
@@ -112,12 +113,12 @@ Input: ```Once upon a time in a magical forest, there lived a tiny brave fox nam
 
 * [FP16 | Softmax: torch | Act: torch] (Baseline)
 
-    *** Once upon a time in a magical forest, there lived a tiny brave fox named Foxy. Foxy *** was a very brave fox, but he was also very lonely. He wanted to find a friend, but he didn’t know where to look.
+    ***Once upon a time in a magical forest, there lived a tiny brave fox named Foxy. Foxy*** was a very brave fox, but he was also very lonely. He wanted to find a friend, but he didn’t know where to look.
 One day, Foxy was walking through the forest when he
 
 * [FP16 | Softmax: pwl-8 | Act: pwl-8] (Uniform PWL)
 
-    *** Once upon a time in a magical forest, there lived a tiny brave fox named Foxy.Foxy. *** He was a very brave and kind fox. He was a very good friend to all the other animals in the forest. He was a very good friend to all the other animals in the forest. He was ❌ (Repetition Loop)
+    ***Once upon a time in a magical forest, there lived a tiny brave fox named Foxy.Foxy.*** He was a very brave and kind fox. He was a very good friend to all the other animals in the forest. He was a very good friend to all the other animals in the forest. He was ❌ (Repetition Loop)
 
 * [FP16 | Softmax: pwl-16 | Act: pwl-16] (DAPA)
 
