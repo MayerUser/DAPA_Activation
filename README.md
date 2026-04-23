@@ -15,7 +15,7 @@ However, traditional Uniform PWL optimized for Mean Squared Error (MSE) often le
 1. **Distribution-Weighted MSE (DWMSE):** DAPA allocates dense hardware segments (knots) exclusively to the high-probability active regions of the input distribution, ignoring the "dead zones".
 2. **Symmetric Zero-Mean Noise:** By matching the mathematical expectation of the noise to the true distribution, DAPA converts the catastrophic `O(N)` linear error drift into a random walk. 
 
-The result? **A 16-segment Fixed-Point (Fix16) hardware logic that reduces GELU/Softmax DSP utilization by 16x~48x, while perfectly maintaining the logical reasoning and text generation capabilities of a full-precision baseline.**
+The result **A 16-segment Fixed-Point (Fix16) hardware logic that reduces GELU/Softmax DSP utilization by 16x~48x, while perfectly maintaining the logical reasoning and text generation capabilities of a full-precision baseline.**
 
 ---
 
