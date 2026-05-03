@@ -1,5 +1,5 @@
 # =========================
-# Makefile (updated - GPT-2 & LLaMA 2 Only, Text Generation Demo Included)
+# Makefile (updated - GPT-2 PPL & LLaMA 2 Text Generation)
 # =========================
 
 PYTHON        := python3
@@ -43,7 +43,7 @@ LOG_FILE      = $(LOG_DIR)/$(DATE)-$(MODEL)-$(SEGMENTS)-$(LOSS).log
 .PHONY: all help clean \
         run \
         test_gpt2_baseline test_gpt2_pwl8 test_gpt2_pwl16 demo_gpt2 \
-        pwl_llama_8 pwl_llama_16 test_llama_baseline test_llama_pwl8 test_llama_pwl16 demo_llama_ppl \
+        pwl_llama_8 pwl_llama_16 \
         gen_llama_baseline gen_llama_pwl8 gen_llama_pwl16 demo_llama_gen
 
 all: help
@@ -103,22 +103,7 @@ pwl_llama_16:
 	$(MAKE) run MODEL=llama2-7b LOSS=dwmse SEGMENTS=16 NUM_SAMPLES=256 PRECISION=fp16
 
 # =========================
-# LLaMA 2 7B - Phase 2: PPL Evaluation (WikiText)
-# =========================
-test_llama_baseline:
-	$(PYTHON) $(SCRIPT_T3) --precision fp16 --softmax torch --act torch --model_name meta-llama/Llama-2-7b-hf
-
-test_llama_pwl8:
-	$(PYTHON) $(SCRIPT_T3) --precision fp16 --softmax pwl-8 --act pwl-8 --sm_q 6.10 --act_q 9.4 --model_name meta-llama/Llama-2-7b-hf
-
-test_llama_pwl16:
-	$(PYTHON) $(SCRIPT_T3) --precision fp16 --softmax pwl-16 --act pwl-16 --sm_q 6.10 --act_q 9.4 --model_name meta-llama/Llama-2-7b-hf
-
-demo_llama_ppl: pwl_llama_8 pwl_llama_16 test_llama_baseline test_llama_pwl8 test_llama_pwl16
-	@echo ">>> LLaMA 2 PPL Evaluation Completed!"
-
-# =========================
-# LLaMA 2 7B - Phase 3: Real Text Generation Demo
+# LLaMA 2 7B - Phase 2: Real Text Generation Demo
 # =========================
 PROMPT ?= As an IC designer, I think the most challenging part of designing hardware for Transformer models is
 MAX_TOKENS ?= 60
@@ -131,15 +116,15 @@ gen_llama_baseline:
 
 gen_llama_pwl8:
 	@echo "\n===================================================================="
-	@echo ">>> Generating Text with DWMSE 8-Seg (Fixed-Point Q6.10 & Q9.4)"
+	@echo ">>> Generating Text with DWMSE 8-Seg"
 	@echo "===================================================================="
-	$(PYTHON) $(SCRIPT_T4) --precision fp16 --softmax pwl-8 --act pwl-8 --prompt "$(PROMPT)" --max_new_tokens $(MAX_TOKENS) --model_name meta-llama/Llama-2-7b-hf
+	$(PYTHON) $(SCRIPT_T4) --precision fp16 --softmax torch --act pwl-8 --prompt "$(PROMPT)" --max_new_tokens $(MAX_TOKENS) --model_name meta-llama/Llama-2-7b-hf
 
 gen_llama_pwl16:
 	@echo "\n===================================================================="
-	@echo ">>> Generating Text with DWMSE 16-Seg (Fixed-Point Q6.10 & Q9.4)"
+	@echo ">>> Generating Text with DWMSE 16-Seg"
 	@echo "===================================================================="
-	$(PYTHON) $(SCRIPT_T4) --precision fp16 --softmax pwl-16 --act pwl-16 --prompt "$(PROMPT)" --max_new_tokens $(MAX_TOKENS) --model_name meta-llama/Llama-2-7b-hf
+	$(PYTHON) $(SCRIPT_T4) --precision fp16 --softmax torch --act pwl-16 --prompt "$(PROMPT)" --max_new_tokens $(MAX_TOKENS) --model_name meta-llama/Llama-2-7b-hf
 
 demo_llama_gen: pwl_llama_8 pwl_llama_16 gen_llama_baseline gen_llama_pwl8 gen_llama_pwl16
 	@echo "\n>>> LLaMA 2 Real Text Generation Comparison Completed!"
@@ -157,7 +142,6 @@ clean:
 help:
 	@echo "======== Demos ========"
 	@echo " make demo_gpt2             : Run complete GPT-2 pipeline (PPL)"
-	@echo " make demo_llama_ppl        : Run LLaMA 2 pipeline (PPL evaluation)"
 	@echo " make demo_llama_gen        : Run LLaMA 2 text generation comparison"
 	@echo "   -> Use: make demo_llama_gen PROMPT=\"Your text here\" MAX_TOKENS=50"
 	@echo "======== Utilities ========"

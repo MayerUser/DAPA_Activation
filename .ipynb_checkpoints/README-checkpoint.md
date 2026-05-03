@@ -107,17 +107,52 @@ Input: ```The capital of France is Paris, and the capital of Japan is```
 
     ***The capital of France is Paris, and the capital of Japan is*** Tokyo. The capital of the United States is Washington ✅ (Stable Logic)
 
-* [Torch SiLU]
+
+### Example 2: Long-Context Storytelling
+Input: ```Once upon a time in a magical forest, there lived a tiny brave fox named Foxy. Foxy```
+
+* [FP16 | Softmax: torch | Act: torch] (Baseline)
+
+    ***Once upon a time in a magical forest, there lived a tiny brave fox named Foxy. Foxy*** was a very brave fox, but he was also very lonely. He wanted to find a friend, but he didn’t know where to look.
+One day, Foxy was walking through the forest when he
+
+* [FP16 | Softmax: pwl-8 | Act: pwl-8] (Uniform PWL)
+
+    ***Once upon a time in a magical forest, there lived a tiny brave fox named Foxy.Foxy.*** He was a very brave and kind fox. He was a very good friend to all the other animals in the forest. He was a very good friend to all the other animals in the forest. He was ❌ (Repetition Loop)
+
+* [FP16 | Softmax: pwl-16 | Act: pwl-16] (DAPA)
+
+    ***Once upon a time in a magical forest, there lived a tiny brave fox named Foxy. Foxy*** was a brave little fox. He was the smallest of the foxes in the forest. He was also the bravest. He was the only fox in the forest who was not afraid of the big bad ✅ (Perfect Syntax & Diversity)
+Torch
 Captain Maoyang awoke to the blaring sound of the red alert siren. The ship's AI calmly announced: 'Warning. Hull breach in sector 4. Life support is down in sector 1. Shields are down in sector 2. We are under attack.'
 The captain sat up in his bunk. He was in his quarters, on the bridge deck, in the command centre. He was in his own ship.
 He was in the middle of a war.
 The captain was a man of few words. He was a man of action. He was a man of war.
 He was a man of the future.
- 
-* [DAPA-8 SiLu]
+ 
+PWL-8
 
 Captain Maoyang awoke to the blaring sound of the red alert siren. The ship's AI calmly announced: 'Warning. Hull breach in sector 4. Life support is failing. Ship is in danger of imminent collapse. Ship is in danger of imminent collapse. Ship is in danger of imminent collapse.
 
+PWL-16
+Captain Maoyang awoke to the blaring sound of the red alert siren. The ship's AI calmly announced: 'Warning. Hull breach in sector 4. Life support is down to 10% in 10 minutes. Ship is in emergency mode. All hands to the bridge.'
+Captain Maoyang was in his quarters, having just woken up. He was in a panic. He ran to the bridge, and saw the hull breach.
+
+
+[FP16 | Softmax: torch | Act: torch]
+------------------------------------------------------------
+Task: Reverse the sequence. Input: A B C D -> Output: D C B A ,Input: 1 2 3 4 -> Output: 4 3 2 1 ,Input: X Y Z W -> Output: W Z Y X ,Input: Alpha Beta Gamma Delta -> Output: Delta Gamma Beta Alpha ,Input: 1 2
+------------------------------------------------------------
+
+[FP16 | Softmax: pwl-8 | Act: pwl-8]
+------------------------------------------------------------
+Task: Reverse the sequence. Input: A B C D -> Output: D C B A ,Input: 1 2 3 4 -> Output: 4 3 2 1 ,Input: X Y Z W -> Output: W Z Y X ,Input: Alpha Beta Gamma Delta -> Output: Delta Epsilon Zeta ,Input: 1 2 3
+------------------------------------------------------------
+
+[FP16 | Softmax: pwl-16 | Act: pwl-16]
+------------------------------------------------------------
+Task: Reverse the sequence. Input: A B C D -> Output: D C B A ,Input: 1 2 3 4 -> Output: 4 3 2 1 ,Input: X Y Z W -> Output: W Z Y X ,Input: Alpha Beta Gamma Delta -> Output: Delta Gamma Beta Alpha ,Input: 1 2
+------------------------------------------------------------
 
 ## 📊 Reproducing Paper Experiments
 You can reproduce the data for the tables and figures in the DAC 2026 paper using the provided Makefiles.

@@ -116,15 +116,15 @@ gen_llama_baseline:
 
 gen_llama_pwl8:
 	@echo "\n===================================================================="
-	@echo ">>> Generating Text with DWMSE 8-Seg (Fixed-Point Q6.10 & Q9.4)"
+	@echo ">>> Generating Text with DWMSE 8-Seg"
 	@echo "===================================================================="
-	$(PYTHON) $(SCRIPT_T4) --precision fp16 --softmax pwl-8 --act pwl-8 --sm_q 6.10 --act_q 9.4 --prompt "$(PROMPT)" --max_new_tokens $(MAX_TOKENS) --model_name meta-llama/Llama-2-7b-hf
+	$(PYTHON) $(SCRIPT_T4) --precision fp16 --softmax torch --act pwl-8 --prompt "$(PROMPT)" --max_new_tokens $(MAX_TOKENS) --model_name meta-llama/Llama-2-7b-hf
 
 gen_llama_pwl16:
 	@echo "\n===================================================================="
-	@echo ">>> Generating Text with DWMSE 16-Seg (Fixed-Point Q6.10 & Q9.4)"
+	@echo ">>> Generating Text with DWMSE 16-Seg"
 	@echo "===================================================================="
-	$(PYTHON) $(SCRIPT_T4) --precision fp16 --softmax pwl-16 --act pwl-16 --sm_q 6.10 --act_q 9.4 --prompt "$(PROMPT)" --max_new_tokens $(MAX_TOKENS) --model_name meta-llama/Llama-2-7b-hf
+	$(PYTHON) $(SCRIPT_T4) --precision fp16 --softmax torch --act pwl-16 --prompt "$(PROMPT)" --max_new_tokens $(MAX_TOKENS) --model_name meta-llama/Llama-2-7b-hf
 
 demo_llama_gen: pwl_llama_8 pwl_llama_16 gen_llama_baseline gen_llama_pwl8 gen_llama_pwl16
 	@echo "\n>>> LLaMA 2 Real Text Generation Comparison Completed!"
