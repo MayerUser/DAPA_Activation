@@ -29,16 +29,16 @@ DAPA_Activation/
 ├── README.md
 ├── requirements.txt
 │
-├── figure/
-│   └── plot_pwl_vs_orig_gelu_act_vit-tiny_16seg.png
-│
 ├── src_img_cls/
 │   ├── Makefile
+│   ├── aux0_exp3.py
 │   ├── config.py
+│   ├── exp3_results.csv
+│   ├── imagenet_cache.py
 │   ├── m0_udanf.py
 │   ├── m1_poly_act.py
 │   ├── m2_find_fixed_bit.py
-│   ├── imagenet_cache.py
+│   ├── m3_udanf_fixed.py
 │   ├── t0_make_pwl.py
 │   ├── t1_vit_run.py
 │   ├── t2_make_poly.py
@@ -49,8 +49,8 @@ DAPA_Activation/
     ├── m0_udanf.py
     ├── m1_poly_act.py
     ├── m2_dwmse_cal.py
-    ├── t0_make_pwl.py
     ├── t0_make_poly.py
+    ├── t0_make_pwl.py
     └── t2_gpt2_run.py
 ```
 
@@ -196,7 +196,6 @@ cd src_nlp_llm
 make run MODEL=gpt2 SEGMENTS=8 NUM_SAMPLES=64 CACHE_DIR=/path/to/hf_cache
 ```
 
-
 ## License and Citation
 
 This project is released under the Apache License 2.0.
@@ -204,10 +203,16 @@ This project is released under the Apache License 2.0.
 If you use this repository or the DAPA framework in your research, please cite:
 
 ```bibtex
-@article{xiang2026dapa,
-  title={DAPA: Distribution Aware Piecewise Activation Functions for On-Device Transformer Inference and Training},
-  author={Xiang, Maoyang and Wang, Bo},
-  journal={arXiv preprint arXiv:2603.19338},
-  year={2026}
+@inproceedings{xiang2026dapa,
+  title     = {DAPA: Distribution Aware Piecewise Activation Functions for On-Device Transformer Inference and Training},
+  author    = {Xiang, Maoyang and Wang, Bo},
+  booktitle = {Proceedings of the 63rd ACM/IEEE Design Automation Conference},
+  series    = {DAC '26},
+  year      = {2026},
+  location  = {Long Beach, CA, USA},
+  publisher = {Association for Computing Machinery},
+  address   = {New York, NY, USA},
+  doi       = {10.1145/3770743.3804274},
+  isbn      = {979-8-4007-2254-7}
 }
 ```
