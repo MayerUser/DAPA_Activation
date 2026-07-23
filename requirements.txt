@@ -1,44 +1,20 @@
-# ==========================================
-# Core Deep Learning & LLM Stack
-# ==========================================
-torch>=2.1.2                # Core framework (removed your local 'dev' suffix for general compatibility)
+# Core model/runtime dependencies
+torch>=2.1.2
 torchvision>=0.16.0
 torchaudio>=2.1.0
-transformers==4.35.2        # [CRITICAL] Must keep this exact version to ensure your LLaMA MLP injection script works
-accelerate==1.11.0          # Essential for multi-GPU/mixed-precision LLM inference
-datasets==4.2.0             # For loading test sets like WikiText
-tokenizers==0.15.2          # Required backend for transformers
-sentencepiece==0.2.1        # Underlying dependency for the LLaMA tokenizer
-safetensors==0.6.2          # For fast and safe loading of large model weights
-peft==0.18.1                # (Optional) Useful if you plan to do LoRA fine-tuning later
-einops==0.8.1               # Great tool for tensor dimension rearrangement
-triton==3.7.0               # Low-level operator acceleration on GPUs
+transformers==4.35.2
+datasets>=4.2.0
+tokenizers==0.15.2
+safetensors>=0.6.2
 
-# ==========================================
-# Scientific Computing & Data Processing
-# ==========================================
-numpy==2.2.6
-pandas==2.3.3
-scipy==1.16.2
-scikit-learn==1.7.2
+# Scientific computing and image processing
+numpy>=2.2.0
+scipy>=1.16.0
+pandas>=2.3.0
+scikit-learn>=1.7.0
+pillow>=12.0.0
 
-# ==========================================
-# Academic Plotting (Nature-style visualizations)
-# ==========================================
-matplotlib==3.10.7          # Core plotting library
-seaborn==0.13.2             # High-level statistical plotting wrapper
-
-# ==========================================
-# Evaluation & NLP Metrics
-# ==========================================
-evaluate==0.4.6             # Official HuggingFace evaluation library
-bert-score==0.3.13          # For evaluating text generation quality
-nltk==3.9.2                 # Traditional NLP toolkit
-jieba==0.42.1               # Chinese word segmentation support
-
-# ==========================================
-# Utilities & Experiment Tracking
-# ==========================================
-wandb==0.21.4               # Tracking experiment parameters and loss curves
-tqdm>=4.66.0                # Progress bars
-jupyterlab==4.5.6           # Interactive Notebook development environment
+# Plotting and experiment utilities
+matplotlib>=3.10.0
+seaborn>=0.13.0
+tqdm>=4.66.0

@@ -1,9 +1,7 @@
 # config.py
 
 # Hugging Face Configuration
-# Replace "YOUR_HUGGINGFACE_TOKEN" with your actual Hugging Face token
 # You can find your token in your Hugging Face account settings
-# HUGGINGFACE_TOKEN = "hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxx" 
 
 # Basic Model Parameters
 IMG_SIZE = 224

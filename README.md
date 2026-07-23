@@ -3,167 +3,207 @@
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Conference](https://img.shields.io/badge/Accepted-DAC_2026-success.svg)](#)
 
-This repository contains the official implementation of the paper: **"DAPA: Distribution Aware Piecewise Activation Functions for On-Device Transformer Inference and Training"** (Accepted at DAC 2026).
+This repository contains the official implementation of the DAC 2026 paper:
 
-## 💡 The Core Insight: Why DAPA?
+**DAPA: Distribution Aware Piecewise Activation Functions for On-Device Transformer Inference and Training**
 
-When deploying Large Language Models (LLMs) and Vision Transformers (ViTs) on resource-constrained edge hardware (e.g., NPUs, FPGAs), replacing complex non-linear functions (like `exp` and `GELU`) with Piecewise Linear (PWL) approximation is a standard practice to save DSPs and power.
+The current public release focuses on the experiments used for the accepted paper: Vision Transformer image classification and GPT-2 language-model perplexity evaluation.
 
-However, traditional Uniform PWL optimized for Mean Squared Error (MSE) often leads to **catastrophic attention collapse** during autoregressive generation. Because MSE ignores the highly skewed pre-activation data distribution caused by the Causal Mask, it introduces asymmetric noise. Over multiple generation steps, this noise accumulates linearly `O(N)`, trapping the model in "repetition loops" or generating gibberish.
+## Core Idea
 
-**DAPA solves this by shifting the paradigm from Numerical Approximation to Distribution Matching:**
-1. **Distribution-Weighted MSE (DWMSE):** DAPA allocates dense hardware segments (knots) exclusively to the high-probability active regions of the input distribution, ignoring the "dead zones".
-2. **Symmetric Zero-Mean Noise:** By matching the mathematical expectation of the noise to the true distribution, DAPA converts the catastrophic `O(N)` linear error drift into a random walk. 
+Piecewise linear (PWL) approximation is commonly used to replace expensive nonlinear functions such as `exp`, `softmax`, and `GELU` on edge hardware. A uniform PWL fit optimized only for numerical MSE can waste segments in rarely used regions and introduce biased approximation noise in the high-probability activation range.
 
-The result **A 16-segment Fixed-Point (Fix16) hardware logic that reduces GELU/Softmax DSP utilization by 16x~48x, while perfectly maintaining the logical reasoning and text generation capabilities of a full-precision baseline.**
+DAPA instead fits the approximation under the empirical input distribution observed in Transformer workloads.
 
----
+Key components:
 
-## 📂 Repository Structure
+- **Distribution-weighted fitting**: DAPA uses Distribution-Weighted MSE (DWMSE) so the fitted segments prioritize the regions that actually dominate runtime activations.
+- **Activation-aware PWL generation**: The calibration scripts collect pre-softmax and pre-activation distributions from the target model, then generate JSON coefficients for each approximation target.
+- **Fixed-point hardware simulation**: The fixed-point modules evaluate quantized PWL coefficients and bit-width choices for hardware-oriented deployment.
 
-The codebase is systematically organized into independent evaluation environments for Vision and NLP tasks. We adopt a strict naming convention: `m_*` scripts contain core algorithmic modules (hardware simulation, bit-width search), and `t_*` scripts contain test pipelines and model evaluation logic.
+## Repository Structure
 
 ```text
 DAPA_Activation/
-├── LICENSE                     # Apache 2.0 License
-├── README.md                   # This file
-├── requirements.txt            # Python dependencies
+├── LICENSE
+├── README.md
+├── requirements.txt
 │
-├── figure/                     # Directory for generated plots and visualizations
+├── figure/
 │   └── plot_pwl_vs_orig_gelu_act_vit-tiny_16seg.png
 │
-├── src_img_cls/                # 👁️ Vision Transformers (ViT, DeiT, Swin) Evaluation
-│   ├── Makefile                # Automation for all vision experiments (EXP1 to EXP6)
-│   ├── config.py               # Global configurations for image classification tasks
-│   │
-│   ├── m0_udanf.py             # Floating-point DAPA (PWL) PyTorch modules
-│   ├── m1_poly_act.py          # Baseline Polynomial approximation modules
-│   ├── m2_find_fixed_bit.py    # DWMSE-guided Fixed-Point Bit-Width Search (Paper Algorithm 1)
-│   ├── m3_udanf_fixed.py       # Fixed-point DAPA hardware simulation modules
-│   │
-│   ├── t0_make_pwl.py          # Generates PWL JSON parameters based on data distribution
-│   ├── t1_vit_run.py           # Evaluates Vision models using floating-point DAPA
-│   ├── t2_make_poly.py         # Generates polynomial approximation parameters
-│   └── t3_vit_run_fixed.py     # Evaluates Vision models using Fixed-point simulated DAPA
+├── src_img_cls/
+│   ├── Makefile
+│   ├── config.py
+│   ├── m0_udanf.py
+│   ├── m1_poly_act.py
+│   ├── m2_find_fixed_bit.py
+│   ├── imagenet_cache.py
+│   ├── t0_make_pwl.py
+│   ├── t1_vit_run.py
+│   ├── t2_make_poly.py
+│   └── t3_vit_run_fixed.py
 │
-└── src_nlp_llm/                # 💬 NLP & Large Language Models (GPT-2, LLaMA-2) Evaluation
-    ├── Makefile                # Automation for GPT-2 evaluation and LLaMA-2 text generation
-    ├── config.py               # Global configurations for NLP tasks
-    │
-    ├── m0_udanf.py             # Floating-point DAPA (PWL) PyTorch modules
-    ├── m1_poly_act.py          # Baseline Polynomial approximation modules
-    ├── m2_dwmse_cal.py         # Utilities to calculate Distribution-Weighted MSE (DWMSE)
-    ├── m3_find_fixed_bit.py    # Fixed-Point Bit-Width Search for LLM activations
-    ├── m3_udanf_fixed.py       # Fixed-point DAPA hardware simulation modules
-    │
-    ├── t0_make_pwl.py          # Generates PWL parameters using LLM pre-activation distributions
-    ├── t0_make_poly.py         # Generates polynomial approximation parameters for NLP
-    ├── t2_gpt2_run.py          # Evaluates GPT-2 perplexity (Float)
-    ├── t2b_gpt2_run_fixed.py   # Evaluates GPT-2 perplexity (Fixed-point)
-    ├── t3_llama_demo.py        # Evaluates LLaMA-2 7B WikiText perplexity (Float & Fixed)
-    └── t4_llama_generate.py    # Core script for LLaMA-2 Autoregressive Text Generation Demo
-```
-## 🛠️ Installation & Setup
-
-### 1. Python Environment
-
-* Install dependencies with: ```pip install -r requirements.txt```
-* Note: This project is developed and optimized using CUDA 12.8 Nightly. Please ensure your local environment and drivers are compatible for the best performance.
-
-### 2. Hugging Face Login
-Pre-trained models and the ImageNet-1K evaluation set are downloaded via Hugging Face.
-
-* Step 1: Login to your Hugging Face account: ```huggingface-cli login```
-* Step 2: Request access to ImageNet-1K on Hugging Face Dataset: ILSVRC/imagenet-1k
-* Step 3: (Optional) Configure a shared cache to avoid redundant downloads ```export HF_HOME=/path/to/hf_cache```
-
-## 🚀 Real Text Generation Demo (LLaMA-2 7B)
-
-To observe the "Attention Collapse" phenomenon and how DAPA prevents it, navigate to the NLP directory and run the interactive demo:
-
-```
-cd src_nlp_llm
-make demo_llama_gen
-```
-You can also test your own sentences by passing arguments:
-
-```
-make demo_llama_gen PROMPT="The capital of France is Paris, and the capital of Japan is" MAX_TOKENS=60
+└── src_nlp_llm/
+    ├── Makefile
+    ├── m0_udanf.py
+    ├── m1_poly_act.py
+    ├── m2_dwmse_cal.py
+    ├── t0_make_pwl.py
+    ├── t0_make_poly.py
+    └── t2_gpt2_run.py
 ```
 
-### Example 1: Factual Recall
+The `m_*` files implement reusable modules and algorithms. The `t_*` files are experiment and evaluation entry points.
 
-Input: ```The capital of France is Paris, and the capital of Japan is```
+## Installation
 
-* [FP16 | Softmax: torch | Act: torch] (Baseline)
+A Python 3.11 environment is recommended.
 
-    ***The capital of France is Paris, and the capital of Japan is*** Tokyo. The capital of France is Paris,
+```bash
+conda create -n dapa python=3.11
+conda activate dapa
+pip install -r requirements.txt
+```
 
-* [FP16 | Softmax: pwl-8 | Act: pwl-8] (Uniform PWL)
+The provided `requirements.txt` keeps only the core dependencies needed for the public vision and GPT-2 PPL demos. Install the PyTorch build that matches your CUDA or CPU environment if the default package resolver does not pick the desired wheel.
 
-    ***The capital of France is Paris, and the capital of Japan is*** Tokyo. nobody knows the capital of the capital of ❌ (Attention Collapse)
+## Hugging Face Cache
 
-* [FP16 | Softmax: pwl-16 | Act: pwl-16] (DAPA)
+The Makefiles use a shared Hugging Face cache by default:
 
-    ***The capital of France is Paris, and the capital of Japan is*** Tokyo. The capital of the United States is Washington ✅ (Stable Logic)
+```make
+CACHE_DIR ?= $(HOME)/MyWorkspace/HfHome
+```
 
-* [Torch SiLU]
-Captain Maoyang awoke to the blaring sound of the red alert siren. The ship's AI calmly announced: 'Warning. Hull breach in sector 4. Life support is down in sector 1. Shields are down in sector 2. We are under attack.'
-The captain sat up in his bunk. He was in his quarters, on the bridge deck, in the command centre. He was in his own ship.
-He was in the middle of a war.
-The captain was a man of few words. He was a man of action. He was a man of war.
-He was a man of the future.
- 
-* [DAPA-8 SiLu]
+You can override it for any run:
 
-Captain Maoyang awoke to the blaring sound of the red alert siren. The ship's AI calmly announced: 'Warning. Hull breach in sector 4. Life support is failing. Ship is in danger of imminent collapse. Ship is in danger of imminent collapse. Ship is in danger of imminent collapse.
+```bash
+make demo_gpt2 CACHE_DIR=/path/to/hf_cache
+make test_exp1 CACHE_DIR=/path/to/hf_cache
+```
 
+Required Hugging Face assets:
 
-## 📊 Reproducing Paper Experiments
-You can reproduce the data for the tables and figures in the DAC 2026 paper using the provided Makefiles.
+- GPT-2 model and WikiText-2 for NLP experiments.
+- ImageNet-1K validation data for image-classification experiments.
+- Vision model checkpoints such as ViT, DeiT, and Swin.
 
-### Part 1: Vision Transformers (src_img_cls/)
+For ImageNet-1K, request access to `ILSVRC/imagenet-1k` on Hugging Face and authenticate once:
 
-Navigate to cd ```src_img_cls/```. Run make all for the full pipeline, or run specific targets:
+```bash
+huggingface-cli login
+```
 
-#### Figure 1 (MSE vs DWMSE Performance Correlation):
+`src_img_cls/imagenet_cache.py` first tries to reuse locally prepared ImageNet Arrow shards from the configured cache. If they are not present, it falls back to Hugging Face dataset loading.
 
-```Bash
+## Makefile Usage
+
+Both experiment directories default to help output:
+
+```bash
+cd src_img_cls
+make
+
+cd ../src_nlp_llm
+make
+```
+
+The Python executable can be overridden without editing the Makefiles:
+
+```bash
+make demo_gpt2 PYTHON=/path/to/python
+```
+
+## Reproducing Vision Experiments
+
+```bash
+cd src_img_cls
+```
+
+Generate DAPA PWL coefficients:
+
+```bash
+make pwl_img
+```
+
+Generate polynomial baselines:
+
+```bash
+make poly
+```
+
+Run the main image-classification experiments:
+
+```bash
 make test_exp1
-```
-Evaluates how different error metrics correlate with actual ViT Top-1 accuracy drops.
-
-#### Figure 4 (Impact of Number of Samples):
-
-```Bash
 make test_exp2
-```
-Proves that DAPA can reliably model the distribution using as few as 4-16 calibration images.
-
-#### Table 2 (Image Classification Architecture vs Performance):
-
-```Bash
 make test_exp3
+make test_exp5
+make test_exp6
 ```
 
-Runs the comprehensive 5-step evaluation across ViT, DeiT, and Swin variants, comparing Baseline, Softmax-only, GELU-only, and fully Fixed-Point Quantized (Q9.7/Q6.8) DAPA configurations.
+Run fixed-point bit-width analysis:
 
-### Part 2: NLP & LLMs (src_nlp_llm/)
-Navigate to cd ```src_nlp_llm/```.
+```bash
+make all-bits
+```
 
-#### Table 2 & Figure 2 (GPT-2 Perplexity Evaluation):
+Run the full paper pipeline:
 
-```Bash
+```bash
+make paper-all
+```
+
+## Reproducing GPT-2 NLP Experiments
+
+```bash
+cd src_nlp_llm
+```
+
+Run the complete GPT-2 perplexity demo:
+
+```bash
 make demo_gpt2
 ```
-Generates PWL files and evaluates the perplexity (PPL) on the WikiText-2 dataset for the GPT-2 baseline, 8-seg, and 16-seg DAPA models.
 
-## 📝 License & Citation
-This project is open-sourced under the Apache License 2.0. You are free to use, modify, and distribute this software for both academic and commercial purposes, provided that proper attribution is given and the patent terms are respected.
+Or run individual GPT-2 targets:
 
-If you find this repository (or the DAPA framework) useful in your research, hardware design, or commercial products, please kindly cite our DAC 2026 paper:
-
+```bash
+make run MODEL=gpt2 SEGMENTS=8
+make run MODEL=gpt2 SEGMENTS=16
+make test_gpt2_baseline
+make test_gpt2_pwl8
+make test_gpt2_pwl16
 ```
+
+## Quick Smoke Tests
+
+These smaller commands are useful for checking the environment before launching full experiments.
+
+Image classification:
+
+```bash
+cd src_img_cls
+python t1_vit_run.py --model_name vit-tiny --num_samples 1 --cache_dir /path/to/hf_cache
+python t0_make_pwl.py --model_name vit-tiny --segment_number 4 --num_samples 1 --cache_dir /path/to/hf_cache
+```
+
+NLP:
+
+```bash
+cd src_nlp_llm
+make run MODEL=gpt2 SEGMENTS=8 NUM_SAMPLES=64 CACHE_DIR=/path/to/hf_cache
+```
+
+
+## License and Citation
+
+This project is released under the Apache License 2.0.
+
+If you use this repository or the DAPA framework in your research, please cite:
+
+```bibtex
 @article{xiang2026dapa,
   title={DAPA: Distribution Aware Piecewise Activation Functions for On-Device Transformer Inference and Training},
   author={Xiang, Maoyang and Wang, Bo},

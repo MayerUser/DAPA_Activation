@@ -1,5 +1,3 @@
-# t0_make_pwl.py
-
 import argparse
 import json
 from pathlib import Path
@@ -22,22 +20,20 @@ from transformers import (
     AutoModelForCausalLM,
     AutoModelForMaskedLM,
 )
+
+# --- 针对 4.35.2 版本的确定性导入 ---
 from transformers.models.vit.modeling_vit import ViTSelfAttention
 from transformers.models.swin.modeling_swin import SwinSelfAttention
+from transformers.models.deit.modeling_deit import DeiTSelfAttention
 from transformers.models.gpt2.modeling_gpt2 import GPT2Attention
 from transformers.activations import GELUActivation, NewGELUActivation
 
-# Dynamically import ViTSdpaSelfAttention if it exists
-try:
-    from transformers.models.vit.modeling_vit import ViTSdpaSelfAttention
-    VIT_ATTENTION_CLASSES = (ViTSelfAttention, ViTSdpaSelfAttention)
-    print(" - Note: Found 'ViTSdpaSelfAttention', supporting modern ViT architectures.")
-except ImportError:
-    print(" - Note: 'ViTSdpaSelfAttention' not found. Supporting older ViT architectures.")
-    ViTSdpaSelfAttention = None  # Define as None if it doesn't exist
-    VIT_ATTENTION_CLASSES = (ViTSelfAttention,)
+# 显式定义需要被 Hook 拦截的 Attention 类
+VIT_ATTENTION_CLASSES = (ViTSelfAttention, DeiTSelfAttention)
+print(f" - Note: Patching attention classes: {[c.__name__ for c in VIT_ATTENTION_CLASSES]}")
 
 from datasets import load_dataset
+from imagenet_cache import load_imagenet_validation
 from scipy.integrate import quad, IntegrationWarning
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -49,28 +45,25 @@ warnings.filterwarnings("ignore", category=IntegrationWarning)
 
 # --- Configuration ---
 IMG_SIZE = 224
-SEQ_LENGTH = 512  # Sequence length for language models
-BATCH_SIZE = 16   # Smaller batch size for potentially larger models
+SEQ_LENGTH = 512
+BATCH_SIZE = 16
 
-# --- MODEL MAPPING (REVISED) ---
+# --- MODEL MAPPING ---
 MODEL_MAPPING = {
-    # Vision Models
     "vit-tiny": {"path": "WinKawaks/vit-tiny-patch16-224", "type": "vision"},
     "vit-small": {"path": "WinKawaks/vit-small-patch16-224", "type": "vision"},
     "vit-base": {"path": "google/vit-base-patch16-224", "type": "vision"},
-    
+
     "deit-tiny": {"path": "facebook/deit-tiny-distilled-patch16-224", "type": "vision"},
     "deit-small": {"path": "facebook/deit-small-distilled-patch16-224", "type": "vision"},
     "deit-base": {"path": "facebook/deit-base-distilled-patch16-224", "type": "vision"},
-    
+
     "swin-small": {"path": "microsoft/swin-small-patch4-window7-224", "type": "vision"},
     "swin-base": {"path": "microsoft/swin-base-patch4-window7-224", "type": "vision"},
-    # Language Models
+
     "gpt2": {"path": "openai-community/gpt2", "type": "language"},
     "bert-base": {"path": "google-bert/bert-base-uncased", "type": "language"},
 }
-# --- END REVISION ---
-
 
 # --- Global dictionary for file-based caching ---
 print(" - Initializing temporary directory for activation caching...")
@@ -89,7 +82,6 @@ atexit.register(cleanup_temp_dir)
 
 
 # --- Hook Functions for Data Capture to DISK ---
-
 def save_hook_data(key: str, data_tensor: torch.Tensor):
     if data_tensor.numel() == 0:
         return
@@ -114,7 +106,6 @@ def get_activation_input_hook(module, input_tensor, output_tensor):
 
 
 # --- Data Loading and Model Preparation ---
-
 def get_model_and_attach_hooks(model_name: str, device: torch.device):
     print(f"Loading model '{model_name}'...")
     if model_name not in MODEL_MAPPING:
@@ -126,11 +117,9 @@ def get_model_and_attach_hooks(model_name: str, device: torch.device):
 
     print(f"Loading from Hugging Face Hub: {model_path} ({model_type} model)")
 
-    # --- REVISED: Use AutoModel, it's stable ---
     if model_type == "vision":
         print(" - Using AutoModelForImageClassification")
         model = AutoModelForImageClassification.from_pretrained(model_path)
-    # --- END REVISION ---
     elif model_name == "gpt2":
         model = AutoModelForCausalLM.from_pretrained(model_path)
     elif "bert" in model_name:
@@ -144,7 +133,6 @@ def get_model_and_attach_hooks(model_name: str, device: torch.device):
     print("Attaching hooks and modifying layers...")
     ln_hooks, sm_modified, gelu_hooks = 0, 0, 0
 
-    # (vit_new_attention_forward from previous fix)
     import math
     def vit_new_attention_forward(self, hidden_states, head_mask=None, output_attentions=False):
         mixed_query_layer = self.query(hidden_states)
@@ -153,13 +141,11 @@ def get_model_and_attach_hooks(model_name: str, device: torch.device):
         query_layer = self.transpose_for_scores(mixed_query_layer)
         attention_scores = torch.matmul(query_layer, key_layer.transpose(-1, -2))
         attention_scores = attention_scores / math.sqrt(self.attention_head_size)
-        
-        # --- CAPTURE SHIFTED SCORES ---
+
         max_vals = torch.max(attention_scores, dim=-1, keepdim=True)[0]
         shifted_scores = attention_scores - max_vals
-        save_hook_data("softmax_input", shifted_scores)  # <-- MODIFIED
-        # --- END CAPTURE ---
-        
+        save_hook_data("softmax_input", shifted_scores)
+
         attention_probs = nn.functional.softmax(attention_scores, dim=-1)
         if hasattr(self, 'dropout'):
             attention_probs = self.dropout(attention_probs)
@@ -169,12 +155,11 @@ def get_model_and_attach_hooks(model_name: str, device: torch.device):
         context_layer = context_layer.view(new_context_layer_shape)
         outputs = (context_layer, attention_probs) if output_attentions else (context_layer,)
         return outputs
-        
-    # GPT-2 patch
+
     def patched_gpt2_forward(
         self, hidden_states, past_key_values=None, attention_mask=None, head_mask=None,
         encoder_hidden_states=None, encoder_attention_mask=None, use_cache=False,
-        output_attentions=False, cache_position=None, **kwargs 
+        output_attentions=False, cache_position=None, **kwargs
     ):
         query, key, value = self.c_attn(hidden_states).split(self.split_size, dim=2)
         def split_heads(tensor, num_heads, attn_head_size):
@@ -208,7 +193,7 @@ def get_model_and_attach_hooks(model_name: str, device: torch.device):
                  attn_weights = attn_weights + attention_mask
             max_vals = torch.max(attn_weights, dim=-1, keepdim=True)[0]
             shifted_scores = attn_weights - max_vals
-            save_hook_data("softmax_input", shifted_scores)  # <-- MODIFIED
+            save_hook_data("softmax_input", shifted_scores)
             attn_probs = nn.functional.softmax(attn_weights, dim=-1)
             attn_probs = self.attn_dropout(attn_probs)
             if head_mask is not None:
@@ -221,14 +206,14 @@ def get_model_and_attach_hooks(model_name: str, device: torch.device):
         attn_output = self.resid_dropout(attn_output)
         outputs = (attn_output, present)
         if output_attentions:
-            outputs = outputs + (attn_weights,) 
+            outputs = outputs + (attn_weights,)
         return outputs
 
     for name, module in model.named_modules():
         if isinstance(module, torch.nn.LayerNorm):
             module.register_forward_hook(get_layernorm_var_hook)
             ln_hooks += 1
-        
+
         if isinstance(module, (SwinSelfAttention, nn.Softmax)) and "attention" in name:
             def shifting_softmax_hook(module, input_tensor, output_tensor):
                 scores = input_tensor[0]
@@ -247,7 +232,7 @@ def get_model_and_attach_hooks(model_name: str, device: torch.device):
         if isinstance(module, (nn.GELU, GELUActivation, NewGELUActivation, nn.SiLU)):
             module.register_forward_hook(get_activation_input_hook)
             gelu_hooks += 1
-            
+
     print(f"✅ Attached {ln_hooks} LayerNorm hooks.")
     print(f"✅ Modified/Hooked {sm_modified} attention/softmax layers.")
     print(f"✅ Attached {gelu_hooks} GELU/SiLU/Activation hooks.")
@@ -256,22 +241,19 @@ def get_model_and_attach_hooks(model_name: str, device: torch.device):
 
     return model
 
-# --- REVISED: get_data_loader ---
 def get_data_loader(num_samples: int, batch_size: int, model_name: str, cache_dir: str = None):
     model_config = MODEL_MAPPING[model_name]
     model_path = model_config["path"]
     model_type = model_config["type"]
 
     if model_type == "vision":
-        # --- CORRECTED TRANSFORMS (from DeiT paper) ---
         image_processor = AutoImageProcessor.from_pretrained(model_path, cache_dir=cache_dir)
         image_mean = image_processor.image_mean
         image_std = image_processor.image_std
-        
-        # Use 384 crop for deit-base-384, 224 for all others
+
         crop_size = 384 if "384" in model_path else 224
-        resize_size = int(crop_size / 0.875)  # This is 256 for 224, 438 for 384
-        
+        resize_size = int(crop_size / 0.875)
+
         print(f" - Applying transforms: Resize({resize_size}) -> CenterCrop({crop_size})")
 
         eval_transform = transforms.Compose([
@@ -280,25 +262,31 @@ def get_data_loader(num_samples: int, batch_size: int, model_name: str, cache_di
             transforms.ToTensor(),
             transforms.Normalize(mean=image_mean, std=image_std),
         ])
-        # --- END CORRECTION ---
 
-        print(f"Loading {num_samples} samples from 'ILSVRC/imagenet-1k' (streaming)...")
-        dataset = load_dataset("ILSVRC/imagenet-1k", split='validation', streaming=True, cache_dir=cache_dir).take(num_samples)
-        
+        print(f"Loading {num_samples} samples from local 'ILSVRC/imagenet-1k' cache...")
+        dataset = load_imagenet_validation(num_samples, cache_dir=cache_dir)
+
+        # --- 修改处：使用实时 Transform 绕过底层格式化 Bug ---
         def apply_transformations(examples):
-            # Apply the manually defined transform
-            processed_images = [eval_transform(image.convert("RGB")) for image in examples["image"]]
-            examples["pixel_values"] = torch.stack(processed_images)
+            # 直接输出包含 PyTorch Tensor 的列表，不使用 torch.stack
+            examples["pixel_values"] = [eval_transform(image.convert("RGB")) for image in examples["image"]]
             return examples
 
-        transformed_dataset = dataset.map(apply_transformations, batched=True, remove_columns=["image"])
-    
+        # 使用 with_transform 替代 .map() 和 .set_format()
+        transformed_dataset = dataset.with_transform(apply_transformations)
+
         def collate_fn(batch):
             pixel_values = torch.stack([item['pixel_values'] for item in batch])
             labels = torch.tensor([item.get('label', -1) for item in batch])
             return {"pixel_values": pixel_values, "labels": labels}
-            
-        return DataLoader(transformed_dataset, batch_size=batch_size, collate_fn=collate_fn, num_workers=4)
+
+        return DataLoader(
+            transformed_dataset,
+            batch_size=batch_size,
+            collate_fn=collate_fn,
+            num_workers=4,
+            pin_memory=True
+        )
 
     elif model_type == "language":
         print(f"Loading samples from WikiText-2...")
@@ -308,7 +296,7 @@ def get_data_loader(num_samples: int, batch_size: int, model_name: str, cache_di
         def tokenize_function(examples):
             if tokenizer.pad_token is None:
                 tokenizer.pad_token = tokenizer.eos_token
-            return tokenizer(examples["text"], truncation=False) 
+            return tokenizer(examples["text"], truncation=False)
 
         tokenized_dataset = dataset.map(tokenize_function, batched=True, remove_columns=["text"])
         if num_samples < len(tokenized_dataset):
@@ -327,12 +315,12 @@ def get_data_loader(num_samples: int, batch_size: int, model_name: str, cache_di
                 concatenated['input_ids'].extend([pad_token_id] * remainder)
                 if 'attention_mask' in concatenated:
                      concatenated['attention_mask'].extend([0] * remainder)
-                else: 
+                else:
                      concatenated['attention_mask'] = [1] * (total_length) + [0] * remainder
                 total_length = len(concatenated['input_ids'])
             total_length = (total_length // SEQ_LENGTH) * SEQ_LENGTH
             result = {k: [t[i:i+SEQ_LENGTH] for i in range(0, total_length, SEQ_LENGTH)] for k, t in concatenated.items()}
-            result["labels"] = result["input_ids"].copy() 
+            result["labels"] = result["input_ids"].copy()
             return result
 
         processed_dataset = tokenized_dataset.map(group_texts, batched=True)
@@ -347,11 +335,9 @@ def get_data_loader(num_samples: int, batch_size: int, model_name: str, cache_di
              return {"input_ids": input_ids, "attention_mask": attention_mask, "labels": labels}
 
         return DataLoader(processed_dataset, batch_size=batch_size, collate_fn=collate_fn)
-# --- END REVISED ---
 
 
 # --- PDF, PWL, and Plotting ---
-
 def get_pdf_from_files(key: str, bins=131072):
     file_list = captured_data[key]["files"]
     if not file_list:
@@ -375,7 +361,7 @@ def get_pdf_from_files(key: str, bins=131072):
             batch_hist, _ = np.histogram(batch_data, bins=global_bins)
             global_hist += batch_hist
             total_count += len(batch_data)
-            os.remove(f)  # Clean up as we go
+            os.remove(f)
         except Exception as e:
             print(f"\nWarning: Could not process file {f}. Error: {e}")
     bin_width = global_bins[1] - global_bins[0]
@@ -414,8 +400,8 @@ def get_uniform_segment_points_from_hist(hist, bin_edges, num_segments: int):
     normalized_cumulative_hist = cumulative_hist / cumulative_hist[-1]
     percentiles_to_find = np.linspace(0, 100, num_segments + 1)
     segment_points = np.interp(
-        percentiles_to_find / 100.0, 
-        normalized_cumulative_hist, 
+        percentiles_to_find / 100.0,
+        normalized_cumulative_hist,
         bin_centers
     )
     return segment_points
@@ -441,11 +427,7 @@ def solve_poly_system(I, J, degree):
     except np.linalg.LinAlgError:
         return None
 
-# --- REVISED: add loss argument ---
 def fast_fit_poly(func, x_min, x_max, hist, bin_edges, degree, loss: str = "dwmse"):
-    """
-    loss: "dwmse" (distribution-weighted MSE) or "mse" (uniform over x)
-    """
     bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
     bin_width = bin_edges[1] - bin_edges[0]
 
@@ -462,13 +444,11 @@ def fast_fit_poly(func, x_min, x_max, hist, bin_edges, degree, loss: str = "dwms
     segment_func_vals = func(segment_centers)
 
     max_k = 2 * degree + 1
-    x_powers = np.vander(segment_centers, max_k, increasing=True).T  # [max_k, n_bins]
+    x_powers = np.vander(segment_centers, max_k, increasing=True).T
 
     if loss == "dwmse":
-        # Distribution-weighted: pdf(x) * dx
         weighted_x_powers = x_powers * segment_hist * bin_width
     else:
-        # Plain MSE over x: uniform in x, ignore hist
         weighted_x_powers = x_powers * bin_width
 
     I = np.sum(weighted_x_powers, axis=1)
@@ -481,7 +461,6 @@ def fast_fit_poly(func, x_min, x_max, hist, bin_edges, degree, loss: str = "dwms
         if degree == 3: return fit_cubic_segment_unweighted(func, x_min, x_max)
     return params
 
-# Unweighted fallbacks
 def fit_linear_segment_unweighted(func, x_min, x_max):
     x = np.linspace(x_min, x_max, 100)
     y = np.array([func(val) for val in x])
@@ -528,7 +507,7 @@ def plot_pwl_vs_original(target_func, pwl_data, segment_points, title: str, save
     x_orig = np.linspace(x_min_plot, x_max_plot, 400)
     y_orig = target_func(x_orig)
     plt.plot(x_orig, y_orig, label='Original Function', color='blue', linewidth=3, zorder=5)
-    
+
     for i, params in enumerate(pwl_data["params"]):
         seg_start = float(pwl_data["intervals"][i][0].replace('-inf', str(x_min_plot)))
         seg_end = float(pwl_data["intervals"][i][1].replace('+inf', str(x_max_plot)))
@@ -546,7 +525,7 @@ def plot_pwl_vs_original(target_func, pwl_data, segment_points, title: str, save
             label='Approximation' if i == 0 else "",
             zorder=10
         )
-    
+
     for point in segment_points[1:-1]:
         plt.axvline(x=point, color='gray', linestyle=':', linewidth=1, zorder=1)
 
@@ -565,7 +544,6 @@ def plot_pwl_vs_original(target_func, pwl_data, segment_points, title: str, save
     print(f"Saved PWL comparison plot to {save_path}")
 
 # --- Main Execution ---
-
 def main():
     parser = argparse.ArgumentParser(description="Generate approximations for functions in transformer models.")
     parser.add_argument(
@@ -594,7 +572,6 @@ def main():
         default=None,
         help="Path to a shared Hugging Face cache directory."
     )
-    # loss argument
     parser.add_argument(
         "--loss",
         type=str,
@@ -608,7 +585,6 @@ def main():
     pdf_dir = Path(f"dst_pdf/{args.num_samples}")
     plot_dir = Path(f"dst_plot/{args.num_samples}")
 
-    # choose output root based on loss
     pwl_root = "dst_pwl" if args.loss == "dwmse" else "dst_pwl_mse"
     pwl_dir = Path(f"{pwl_root}/{args.num_samples}")
 
@@ -629,8 +605,7 @@ def main():
         for batch in tqdm(data_loader, desc="Inference"):
             batch.pop("labels", None)
             batch = {k: v.to(device) for k, v in batch.items()}
-            
-            # Handle DeiT-Distilled Forward Pass
+
             is_deit_distilled = "deit" in args.model_name
 
             if is_deit_distilled:
@@ -644,14 +619,13 @@ def main():
 
     print("Inference complete. Processing captured / loaded PDF data...\n")
 
-    def silu_numpy(x): 
+    def silu_numpy(x):
         return x / (1 + np.exp(-x))
 
     activation_function = silu_numpy if "bert" in args.model_name else (
         lambda x: x*0.5*(1.0+np.tanh(np.sqrt(2.0/np.pi)*(x+0.044715*x**3)))
     )
 
-    # Removed sqrt_ln from approximation list
     functions_to_approximate = {
         "exp_sm": {
             "data_key": "softmax_input",
@@ -666,12 +640,11 @@ def main():
             "degree": 1
         }
     }
-    
+
     for func_key, config in functions_to_approximate.items():
         data_key = config["data_key"]
         print(f"--- Processing for {config['name']} ({data_key}) ---")
 
-        # --- NEW: try to load existing PDF file first ---
         pdf_save_path = pdf_dir / f"pdf_{func_key}_{args.model_name}_{args.num_samples}samples.npz"
 
         if pdf_save_path.exists():
@@ -690,18 +663,17 @@ def main():
             global_max = captured_data[data_key]["max"]
 
             np.savez_compressed(
-                pdf_save_path, 
-                hist=hist, 
-                bin_edges=bin_edges, 
-                global_min=global_min, 
+                pdf_save_path,
+                hist=hist,
+                bin_edges=bin_edges,
+                global_min=global_min,
                 global_max=global_max
             )
             print(f"  - Saved new PDF data to {pdf_save_path}")
 
-        # --- Now continue with PWL generation using hist & bin_edges (loaded or generated) ---
         segment_points = get_uniform_segment_points_from_hist(hist, bin_edges, args.segment_number)
         segment_points = np.unique(segment_points)
-        
+
         pwl_save_path = pwl_dir / f"pwl_{func_key}_{args.model_name}_{args.segment_number}seg.json"
 
         pwl_data = generate_and_save_pwl(

@@ -1,5 +1,3 @@
-# t1_vit_run.py
-
 import argparse
 import types
 from pathlib import Path
@@ -10,45 +8,32 @@ import torch
 import torch.nn as nn
 import torchvision.transforms as transforms
 from datasets import load_dataset
+from imagenet_cache import load_imagenet_validation
 from transformers import AutoImageProcessor, AutoModelForImageClassification
-# --- MODIFICATION: Make imports backward-compatible ---
+
+# --- 针对 4.35.2 版本的确定性导入 ---
 from transformers.models.vit.modeling_vit import ViTSelfAttention
 from transformers.models.swin.modeling_swin import SwinSelfAttention
-from transformers.models.deit.modeling_deit import DeiTSelfAttention  # <--- ADDED IMPORT
+from transformers.models.deit.modeling_deit import DeiTSelfAttention
 from transformers.activations import GELUActivation, NewGELUActivation
 
-# Dynamically import ViTSdpaSelfAttention if it exists in the installed transformers version
-try:
-    from transformers.models.vit.modeling_vit import ViTSdpaSelfAttention
-    # --- ADDED DeiTSelfAttention TO TUPLE ---
-    ATTENTION_CLASSES_TO_PATCH = (ViTSelfAttention, ViTSdpaSelfAttention, DeiTSelfAttention)
-    print(" - Note: Found 'ViTSdpaSelfAttention', supporting modern ViT/DeiT architectures.")
-except ImportError:
-    print(" - Note: 'ViTSdpaSelfAttention' not found. Supporting older ViT/DeiT architectures.")
-    ViTSdpaSelfAttention = None  # Define as None if it doesn't exist
-    # --- ADDED DeiTSelfAttention TO TUPLE ---
-    ATTENTION_CLASSES_TO_PATCH = (ViTSelfAttention, DeiTSelfAttention)
-# --- END MODIFICATION ---
-
+# 显式定义需要被替换 forward 函数的类
+ATTENTION_CLASSES_TO_PATCH = (ViTSelfAttention, DeiTSelfAttention)
 
 from torch.utils.data import DataLoader, Subset
 from torchvision.datasets import ImageFolder
 from tqdm import tqdm
 
-# Import PWL function implementations and config parameters
 import config
 from m0_udanf import PWLGelu, PWLSqrt, PWLSoftmax, DebugSoftmax
 from m1_poly_act import PolyGelu
 
-
-# --- MODEL MAPPING (REVISED) ---
+# --- MODEL MAPPING ---
 MODEL_MAPPING = {
-    # Vision Models
     "vit-tiny": {"path": "WinKawaks/vit-tiny-patch16-224", "type": "vision"},
     "vit-small": {"path": "WinKawaks/vit-small-patch16-224", "type": "vision"},
     "vit-base": {"path": "google/vit-base-patch16-224", "type": "vision"},
     
-    # --- Use the distilled models ---
     "deit-tiny": {"path": "facebook/deit-tiny-distilled-patch16-224", "type": "vision"},
     "deit-small": {"path": "facebook/deit-small-distilled-patch16-224", "type": "vision"},
     "deit-base": {"path": "facebook/deit-base-distilled-patch16-224", "type": "vision"}, 
@@ -56,16 +41,9 @@ MODEL_MAPPING = {
     "swin-small": {"path": "microsoft/swin-small-patch4-window7-224", "type": "vision"},
     "swin-base": {"path": "microsoft/swin-base-patch4-window7-224", "type": "vision"},
 }
-# --- END REVISION ---
-
 
 # --- Custom Modules for PWL Integration ---
-
 class PWLLayerNorm(nn.Module):
-    """
-    A custom LayerNorm module that replaces the standard torch.sqrt with a
-    piecewise polynomial approximation (PWLSqrt).
-    """
     def __init__(self, original_layernorm: nn.LayerNorm, sqrt_json_path: str):
         super().__init__()
         self.normalized_shape = original_layernorm.normalized_shape
@@ -83,7 +61,6 @@ class PWLLayerNorm(nn.Module):
         print(f"  - Replacing LayerNorm with PWLLayerNorm using {Path(sqrt_json_path).name}")
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # Cast to float32 for stable calculation, then cast back
         input_dtype = x.dtype
         x_float = x.to(torch.float32)
 
@@ -98,7 +75,6 @@ class PWLLayerNorm(nn.Module):
         return normalized_x.to(input_dtype)
 
 # --- Model Modification Logic ---
-
 def replace_modules_in_model(
     model,
     model_name,
@@ -109,11 +85,6 @@ def replace_modules_in_model(
     debug_softmax_flag,
     loss: str
 ):
-    """
-    Finds and replaces functions in various transformer models with their PWL implementations.
-    loss: "dwmse" -> read json from dst_pwl
-          "mse"   -> read json from dst_pwl_mse
-    """
     print("--- Modifying model ---")
 
     base_pwl_dir = "dst_pwl" if loss == "dwmse" else "dst_pwl_mse"
@@ -121,13 +92,11 @@ def replace_modules_in_model(
 
     replacements = {}
     for name, module in model.named_modules():
-        # Queue LayerNorm modules for sqrt replacement
         if isinstance(module, nn.LayerNorm) and sqrt_impl != 'torch':
             num_segments = sqrt_impl.split('-')[-1]
             json_path = f"{base_pwl_dir}/{num_samples}/pwl_sqrt_ln_{model_name}_{num_segments}seg.json"
             replacements[name] = PWLLayerNorm(module, json_path)
 
-        # Queue Activation modules for replacement (PWL or POLY)
         if isinstance(module, (nn.GELU, GELUActivation, NewGELUActivation, nn.SiLU)) and act_impl != 'torch':
             if act_impl.startswith('pwl-'):
                 num_segments = act_impl.split('-')[-1]
@@ -140,7 +109,6 @@ def replace_modules_in_model(
                 replacements[name] = PolyGelu(json_path)
                 print(f"  - Queuing Polynomial GELU replacement for '{name}' with {Path(json_path).name}")
 
-    # Apply all queued simple replacements
     for name, new_module in replacements.items():
         name_parts = name.split('.')
         parent_name = ".".join(name_parts[:-1])
@@ -149,34 +117,21 @@ def replace_modules_in_model(
         setattr(parent_module, child_name, new_module)
         print(f"  - [DEBUG] Replaced '{name}' successfully.")
 
-    # --- ARCHITECTURE-AWARE SOFTMAX PATCHING ---
     if softmax_impl != 'torch':
         modified_count = 0
         
-        # --- Patched forward method for ViT/DeiT models ---
         def patched_forward_vit(self, hidden_states, head_mask=None, output_attentions=False):
-            # Call original class methods, do not re-implement
-            
-            # 1. Get query
             mixed_query_layer = self.query(hidden_states)
-            
-            # 2. Get key, value (using the model's original transpose)
             key_layer = self.transpose_for_scores(self.key(hidden_states))
             value_layer = self.transpose_for_scores(self.value(hidden_states))
             query_layer = self.transpose_for_scores(mixed_query_layer)
-
-            # 3. Calculate scores (original)
             attention_scores = torch.matmul(query_layer, key_layer.transpose(-1, -2))
             attention_scores = attention_scores / math.sqrt(self.attention_head_size)
-
-            # 4. Use custom_softmax
             attention_probs = self.custom_softmax(attention_scores)
             
-            # 5. Dropout
             if hasattr(self, 'dropout'):
                 attention_probs = self.dropout(attention_probs)
             
-            # 6. Context
             context_layer = torch.matmul(attention_probs, value_layer)
             context_layer = context_layer.permute(0, 2, 1, 3).contiguous()
             new_context_layer_shape = context_layer.size()[:-2] + (self.all_head_size,)
@@ -185,7 +140,6 @@ def replace_modules_in_model(
             outputs = (context_layer, attention_probs) if output_attentions else (context_layer,)
             return outputs
 
-        # --- Patched forward method for Swin models ---
         def patched_forward_swin(self, hidden_states, attention_mask=None, head_mask=None, output_attentions=False):
             B_, N, C = hidden_states.shape
             num_attention_heads = self.num_attention_heads
@@ -222,7 +176,6 @@ def replace_modules_in_model(
             context_layer = (attention_probs @ value).transpose(1, 2).reshape(B_, N, C)
             return (context_layer, attention_probs) if output_attentions else (context_layer,)
 
-        # Iterate and apply the correct patch based on the module type
         for name, module in model.named_modules():
             patch_function = None
             if isinstance(module, ATTENTION_CLASSES_TO_PATCH):
@@ -249,19 +202,16 @@ def replace_modules_in_model(
     print("--- Model modification complete ---\n")
     return model
 
-# --- Data Loading and Evaluation ---
-
+# --- Data Loading ---
 def get_data_loader(num_samples: int, batch_size: int, model_name: str, cache_dir: str = None):
     model_path = MODEL_MAPPING[model_name]["path"]
     
-    # --- CORRECTED TRANSFORMS (from DeiT paper) ---
     image_processor = AutoImageProcessor.from_pretrained(model_path, cache_dir=cache_dir)
     image_mean = image_processor.image_mean
     image_std = image_processor.image_std
     
-    # Use 384 crop for deit-base-384, 224 for all others
     crop_size = 384 if "384" in model_path else 224
-    resize_size = int(crop_size / 0.875)  # This is 256 for 224, 438 for 384
+    resize_size = int(crop_size / 0.875)
     
     print(f" - Applying transforms: Resize({resize_size}) -> CenterCrop({crop_size})")
 
@@ -271,17 +221,18 @@ def get_data_loader(num_samples: int, batch_size: int, model_name: str, cache_di
         transforms.ToTensor(),
         transforms.Normalize(mean=image_mean, std=image_std),
     ])
-    # --- END CORRECTION ---
 
-    print(f"Loading {num_samples} samples from 'ILSVRC/imagenet-1k' (streaming)...")
-    dataset = load_dataset("ILSVRC/imagenet-1k", split='validation', streaming=True, cache_dir=cache_dir).take(num_samples)
+    print(f"Loading {num_samples} samples from local 'ILSVRC/imagenet-1k' cache...")
+    dataset = load_imagenet_validation(num_samples, cache_dir=cache_dir)
 
+    # --- 修改处：使用实时 Transform 绕过底层格式化 Bug ---
     def apply_transformations(examples):
-        processed_images = [eval_transform(image.convert("RGB")) for image in examples["image"]]
-        examples["pixel_values"] = torch.stack(processed_images)
+        # 直接输出包含 PyTorch Tensor 的列表，不使用 torch.stack
+        examples["pixel_values"] = [eval_transform(image.convert("RGB")) for image in examples["image"]]
         return examples
 
-    transformed_dataset = dataset.map(apply_transformations, batched=True, remove_columns=["image"])
+    # 使用 with_transform 替代 .map() 和 .set_format()
+    transformed_dataset = dataset.with_transform(apply_transformations)
 
     def collate_fn(batch):
         pixel_values = torch.stack([item['pixel_values'] for item in batch])
@@ -296,14 +247,12 @@ def get_data_loader(num_samples: int, batch_size: int, model_name: str, cache_di
         pin_memory=True
     )
 
-# --- REVISED: evaluate_model ---
 def evaluate_model(model, data_loader, device, precision, model_name: str):
     model.eval()
     model.to(device)
     correct, total = 0, 0
     autocast_dtype = torch.float16 if precision == 'fp16' else torch.float32
 
-    # Check if this is a DeiT distilled model
     is_deit_distilled = "deit" in model_name
 
     with torch.no_grad():
@@ -312,7 +261,6 @@ def evaluate_model(model, data_loader, device, precision, model_name: str):
             
             with torch.autocast(device_type=device.type, dtype=autocast_dtype):
                 if is_deit_distilled:
-                    # DeiT distilled logic
                     outputs = model.deit(pixel_values=images)
                     hidden_states = outputs.last_hidden_state
 
@@ -328,10 +276,8 @@ def evaluate_model(model, data_loader, device, precision, model_name: str):
             total += labels.size(0)
             correct += (predictions == labels).sum().item()
     return 100 * correct / total
-# --- END REVISION ---
 
 # --- Main Execution ---
-
 def main():
     parser = argparse.ArgumentParser(description="Test Vision Transformer models with PWL functions.")
     
@@ -348,8 +294,13 @@ def main():
     parser.add_argument("--precision", type=str, default='fp32', choices=['fp32', 'fp16'])
     parser.add_argument("--debug_softmax", action="store_true")
     parser.add_argument("--num_samples", type=int, default=256)
+    parser.add_argument(
+        "--pwl_samples",
+        type=int,
+        default=None,
+        help="Number of samples used to generate the PWL files. Defaults to --num_samples.",
+    )
     parser.add_argument("--cache_dir", type=str, default=None, help="Path to a shared Hugging Face cache directory.")
-    # NEW: loss for choosing PWL json source
     parser.add_argument(
         "--loss",
         type=str,
@@ -359,25 +310,38 @@ def main():
     )
 
     args = parser.parse_args()
+    pwl_samples = args.pwl_samples if args.pwl_samples is not None else args.num_samples
+    uses_pwl = any(impl.startswith("pwl-") for impl in (args.sqrt, args.softmax, args.act))
+
+    # --- 硬件状态强警示与自动判定 ---
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print("\n" + "="*40)
+    print(f"[*] 硬件检测状态: 当前分配的设备是 {device.type.upper()}")
+    if device.type == "cpu":
+        print("    -> ⚠️ 警告: 未检测到可用 GPU，PyTorch 将完全在 CPU 上执行！")
+        print("    -> 提示: 请检查是否正确申请了 GPU 资源或 CUDA 环境变量是否正确配置。")
+    print("="*40 + "\n")
 
     print("--- Test Configuration ---")
     print(f"Model: {args.model_name}")
     print(f"Precision: {args.precision.upper()}")
     print(f"SQRT: {args.sqrt}, Softmax: {args.softmax}, Activation: {args.act}")
     print(f"Loss (PWL source): {args.loss}  (dst_pwl if dwmse, dst_pwl_mse if mse)")
+    if uses_pwl:
+        print(f"PWL samples: {pwl_samples}")
     if args.cache_dir:
         print(f"Using shared cache directory: {args.cache_dir}")
-    print(f"Test samples: {config.SAMPLE_NUM}, Batch size: {config.BATCH_SIZE}\n")
+    print(f"Test samples: {args.num_samples}, Batch size: {config.BATCH_SIZE}\n")
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     torch_dtype = torch.float16 if args.precision == 'fp16' else torch.float32
     
-    print(f" - Using AutoModelForImageClassification (standard head) for {args.model_name}")
+    # --- 第一时间把模型放进 GPU ---
+    print(f" - Loading AutoModelForImageClassification directly to {device.type.upper()}...")
     model = AutoModelForImageClassification.from_pretrained(
         MODEL_MAPPING[args.model_name]["path"], 
         torch_dtype=torch_dtype,
         cache_dir=args.cache_dir
-    )
+    ).to(device)
 
     model = replace_modules_in_model(
         model,
@@ -385,13 +349,13 @@ def main():
         args.sqrt,
         args.softmax,
         args.act,
-        args.num_samples,
+        pwl_samples,
         args.debug_softmax,
         args.loss
     )
     
     eval_data_loader = get_data_loader(
-        config.SAMPLE_NUM,
+        args.num_samples,
         config.BATCH_SIZE,
         args.model_name,
         cache_dir=args.cache_dir
@@ -400,7 +364,7 @@ def main():
     accuracy = evaluate_model(model, eval_data_loader, device, args.precision, args.model_name)
     
     print("\n--- Results ---")
-    print(f"Top-1 Accuracy on {config.SAMPLE_NUM} samples ({args.precision.upper()}): {accuracy:.2f}%")
+    print(f"Top-1 Accuracy on {args.num_samples} samples ({args.precision.upper()}): {accuracy:.2f}%")
 
 if __name__ == "__main__":
     main()

@@ -2,13 +2,13 @@
 
 # --- Global Configuration ---
 
-# Use python3 by default. Can be changed to just "python" if needed.
-PYTHON = python3
+# Use python3 by default. Override with `make <target> PYTHON=/path/to/python`.
+PYTHON ?= python3
 
 # CACHE_DIR: Optional. Set a shared Hugging Face cache directory.
 # This will be passed to all python scripts that support it.
-# Example: CACHE_DIR = /path/to/my/hf/cache
-CACHE_DIR =
+# Example: CACHE_DIR=/path/to/my/hf/cache
+CACHE_DIR ?= $(HOME)/MyWorkspace/HfHome
 
 # --- Handle Optional Cache Dir ---
 # This creates a CACHE_DIR_ARG variable that is either empty
@@ -68,17 +68,24 @@ ANALYSIS_SEGMENTS = 16
 
 # Default model for a single 'find-bits' run
 ANALYSIS_MODEL_DEFAULT = vit-tiny
+# --- Demo Configuration ---
+DEMO_MODEL ?= vit-small
+DEMO_SEGMENTS ?= 16
+DEMO_PWL_SAMPLES ?= 256
+DEMO_TEST_SAMPLES ?= 4096
 
 
 # --- Phony Targets (Targets that are not files) ---
-.PHONY: help all pwl_img pwl_img_mse pwl_nlp poly test_exp1 test_exp2 test_exp3 finetune_exp4 test_exp4 test_exp5 test_exp6 clean demo ref
+.PHONY: help all paper-all pwl_img pwl_img_mse pwl_nlp poly test_exp1 test_exp2 test_exp3 finetune_exp4 test_exp4 test_exp5 test_exp6 clean demo ref
 .PHONY: all-bits find-bits bits-%
 
 
 # --- Main Experiment Targets ---
 
-# Default target: Run the entire pipeline from generation to testing.
-all: clean pwl_img poly pwl_img_mse test_exp1 test_exp2 test_exp5 test_exp6 all-bits test_exp3
+# Default target: show help. Use paper-all for the full experiment pipeline.
+all: help
+
+paper-all: clean pwl_img poly pwl_img_mse test_exp1 test_exp2 test_exp5 test_exp6 all-bits test_exp3
 
 define run_pwl_generation
 	@mkdir -p dst_log
@@ -337,12 +344,12 @@ test_exp6:
 demo:
 	@echo "--- RUNNING VIT DAPU TEST ---"
 	@mkdir -p dst_log
-	@$(PYTHON) t1_vit_run.py --model_name vit-small --softmax pwl-16 --act pwl-16 --num_samples 256 $(CACHE_DIR_ARG) 2>&1 | tee dst_log/demo.log
+	@$(PYTHON) t1_vit_run.py --model_name $(DEMO_MODEL) --softmax pwl-$(DEMO_SEGMENTS) --act pwl-$(DEMO_SEGMENTS) --num_samples $(DEMO_TEST_SAMPLES) --pwl_samples $(DEMO_PWL_SAMPLES) $(CACHE_DIR_ARG) 2>&1 | tee dst_log/demo.log
 
 ref:
 	@echo "--- RUNNING VIT TEST ---"
 	@mkdir -p dst_log
-	@$(PYTHON) t1_vit_run.py --model_name vit-small $(CACHE_DIR_ARG) 2>&1 | tee dst_log/ref.log
+	@$(PYTHON) t1_vit_run.py --model_name $(DEMO_MODEL) --num_samples $(DEMO_TEST_SAMPLES) $(CACHE_DIR_ARG) 2>&1 | tee dst_log/ref.log
 
 
 # --- Bit-Width Analysis Targets (from m2_find_fixed_bit.py) ---
@@ -397,7 +404,8 @@ help:
 	@echo "Usage: make [target] [VARIABLES...]"
 	@echo ""
 	@echo "Main Targets:"
-	@echo "  all           Run the full pipeline (clean, pwl_img, poly, pwl_img_mse, test_exp1, test_exp2, test_exp5, test_exp6, all-bits, test_exp3)"
+	@echo "  all           Show this help menu"
+	@echo "  paper-all     Run the full pipeline (clean, pwl_img, poly, pwl_img_mse, test_exp1, test_exp2, test_exp5, test_exp6, all-bits, test_exp3)"
 	@echo "  pwl_img       Generate Piecewise (PWL) approximation files for Image Models"
 	@echo "  pwl_img_mse   Generate PWL approximation files based on MSE"
 	@echo "  poly          Generate Polynomial (POLY) approximation files for GELU"
@@ -415,7 +423,7 @@ help:
 	@echo "  bits-<model>  Run bit analysis for a specific model (e.g., make bits-vit-tiny)"
 	@echo ""
 	@echo "Utility Targets:"
-	@echo "  demo          Run a simple PWL demo for vit-small"
+	@echo "  demo          Run a PWL demo with configurable DEMO_TEST_SAMPLES/DEMO_PWL_SAMPLES"
 	@echo "  ref           Run a reference PyTorch test for vit-small"
 	@echo "  clean         Remove all generated directories and files (dst_*, pycache, etc.)"
 	@echo "  help          Show this help menu"
